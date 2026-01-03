@@ -82,18 +82,7 @@ provider.setCustomParameters({
 })
 document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
-const switchAccountBtn = document.getElementById('switch-account');
 
-if (switchAccountBtn) {
-  switchAccountBtn.onclick = async () => {
-    userMenu.style.display = 'none';
-    try {
-      await signInWithRedirect(auth, provider);
-    } catch (e) {
-      showToast('アカウント切替失敗');
-    }
-  };
-}
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; signOut( auth ); location.hash = '#login'; }
 document.addEventListener( 'click', e => {
 	if ( !userMenu.contains( e.target ) && e.target !== userIcon ) userMenu.style.display = 'none';
