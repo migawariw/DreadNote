@@ -74,8 +74,9 @@ function show( view ) { Object.values( views ).forEach( v => v.hidden = true ); 
 
 /* Auth */
 const provider = new GoogleAuthProvider();
-// document.getElementById( 'login' ).onclick = async () => { try { await signInWithEmailAndPassword( auth, emailInput.value, passwordInput.value ); } catch ( e ) { showToast( "ログイン失敗: " + e.message ); } };
-// document.getElementById( 'signup' ).onclick = async () => { try { await createUserWithEmailAndPassword( auth, emailInput.value, passwordInput.value ); } catch ( e ) { showToast( "サインアップ失敗: " + e.message ); } };
+provider.setCustomParameters({
+  prompt: 'select_account'
+})
 document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
 const switchAccountBtn = document.getElementById( 'switch-account' );
