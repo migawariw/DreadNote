@@ -421,7 +421,8 @@ a:visited {
 }
 
 body.spread {
-	padding: 0px;
+	padding-left: 0;
+	padding-right: 0;
 }
 
 /* Dark mode styles */
