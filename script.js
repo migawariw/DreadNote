@@ -657,22 +657,22 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 		{ title: '', content: '', updated: Date.now() }
 	);
 	/* ===== new-memo 位置固定（iOS対策） 信じるからな===== */
-function fixFab() {
-  const btn = document.getElementById('new-memo');
-  if (!btn) return;
+// function fixFab() {
+//   const btn = document.getElementById('new-memo');
+//   if (!btn) return;
 
-  const vh = window.innerHeight;
+//   const vh = window.innerHeight;
 
-  btn.style.bottom = '20px';
+//   btn.style.bottom = '20px';
 
-  window.addEventListener('resize', () => {
-    document.body.style.height = vh + 'px';
-  });
-}
+//   window.addEventListener('resize', () => {
+//     document.body.style.height = vh + 'px';
+//   });
+// }
 
-document.addEventListener('DOMContentLoaded', () => {
-  fixFab();
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   fixFab();
+// });
 
 	// meta（目次箱）に追加
 	metaCache.memos.push( {
