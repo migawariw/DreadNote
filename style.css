@@ -164,15 +164,23 @@ img {
 	padding: 0;
 	/* 余白ゼロ */
 	overflow: hidden;
+	background: transparent !important;
+
 }
 
 .tiktok iframe {
+	aspect-ratio: 9/16;
 	width: 100%;
 	height: 100%;
+	max-width: 100vw;
+	max-height: 100vh;
 	border: 0;
 	display: block;
 	position: absolute;
 	margin: 0;
+	padding: 0;
+	/* overflow: hidden; */
+	background: transparent !important;
 }
 
 /* Twitter 用（高さ自動、余白なし） */
