@@ -404,10 +404,20 @@ async function openEditor( id ) {
 //   show('editor');
 // }
 
+function fixSafariLayout() {
+  if (document.body.scrollWidth > window.innerWidth) {
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.width = '100%';
+    document.body.style.width = '100%';
+  }
+}
+
 function showEditor( data ) {
 	titleInput.value = data.title || '';
-	editor.innerHTML = data.content || '<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>';
+	editor.innerHTML = data.content || '';
 	show( 'editor' );
+  // ★ これを追加
+  setTimeout(fixSafariLayout, 0)
 	window.scrollTo(0, 0);
 }
 let saveTimer = null;
