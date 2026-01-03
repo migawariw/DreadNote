@@ -13,6 +13,7 @@
     if (localStorage.getItem('dreadnote-dark') === '1') {
       document.documentElement.style.backgroundColor = '#000';
       document.documentElement.style.colorScheme = 'dark';
+      document.body && (document.body.style.backgroundColor = '#000');
     }
   } catch (e) {}
 })();
