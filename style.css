@@ -178,12 +178,21 @@ img {
 /* Twitter 用（高さ自動、余白なし） */
 .twitter {
 	width: 100%;
+	background: transparent !important;
 	padding-top: 0;
 	margin: 0;
+	/* background: none; */
 }
 
 .twitter blockquote {
+	background: transparent !important;
 	margin: 0;
+}
+.twitter iframe {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 /* Instagram 完全フル幅 */

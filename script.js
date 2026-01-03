@@ -392,11 +392,7 @@ async function openEditor( id ) {
 	showEditor( data );
 }
 
-// function showEditor(data){
-//   titleInput.value=data.title||'';
-//   editor.innerHTML=data.content||'';
-//   show('editor');
-// }
+
 
 function fixSafariLayout() {
   if (document.body.scrollWidth > window.innerWidth) {
@@ -468,6 +464,7 @@ async function updateMeta( id, fields ) {
 /* Paste処理（Base64 直接保存版） */
 editor.addEventListener( 'paste', async e => {
 	e.preventDefault();
+	try{
 	const range = document.getSelection().getRangeAt( 0 );
 	const items = e.clipboardData.items || [];
 	const files = e.clipboardData.files || [];
@@ -527,7 +524,30 @@ editor.addEventListener( 'paste', async e => {
 	const url = text.trim();
 
 	// helper: insert element and collapse
-	const insertEl = ( el ) => { range.insertNode( el ); range.collapse( false ); saveMemo(); };
+const insertEl = (el) => {
+  range.insertNode(el);
+
+  // ★ 改行を入れる
+  const br = document.createElement('br');
+  range.setStartAfter(el);
+  range.insertNode(br);
+
+  // カーソルを改行の後ろへ
+  range.setStartAfter(br);
+  range.collapse(true);
+
+  // ★ 保存は input に任せる
+};
+
+const insertPlain = (el) => {
+  range.insertNode(el);
+
+  // カーソルを要素の後ろに移動するだけ
+  range.setStartAfter(el);
+  range.collapse(true);
+
+  // 保存は input に任せる
+};
 
 	// 2-1. YouTube
 	let yt = url.match( /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]+)/ );
@@ -628,8 +648,12 @@ editor.addEventListener( 'paste', async e => {
 	}
 
 	//   // 2-8. 通常テキスト
-	insertEl( document.createTextNode( url ) );
-} );
+	insertPlain( document.createTextNode( url ) );
+}finally {
+    // ★ input を強制発火
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
 
 /* Preview */
 function showPreview( id, title, content ) {
@@ -656,23 +680,6 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 		collection( db, 'users', auth.currentUser.uid, 'memos' ),
 		{ title: '', content: '', updated: Date.now() }
 	);
-	/* ===== new-memo 位置固定（iOS対策） 信じるからな===== */
-// function fixFab() {
-//   const btn = document.getElementById('new-memo');
-//   if (!btn) return;
-
-//   const vh = window.innerHeight;
-
-//   btn.style.bottom = '20px';
-
-//   window.addEventListener('resize', () => {
-//     document.body.style.height = vh + 'px';
-//   });
-// }
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   fixFab();
-// });
 
 	// meta（目次箱）に追加
 	metaCache.memos.push( {
