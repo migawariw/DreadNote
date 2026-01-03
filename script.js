@@ -2,6 +2,8 @@ import { getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-fire
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, doc, setDoc, getDoc, deleteDoc} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getRedirectResult } from
+  "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 let metaCache = null;        // ← 目次箱
 const memoCache = {};       // ← 本文キャッシュ
@@ -11,6 +13,7 @@ const firebaseConfig = { apiKey: "AIzaSyCdDf0GH80PoGlcbk2yjlaVQfP01Gk9m18", auth
 const app = initializeApp( firebaseConfig );
 const auth = getAuth( app );
 const db = getFirestore( app );
+getRedirectResult(auth).catch(() => {});
 
 /* DOM要素 */
 const views = { login: document.getElementById( 'view-login' ), list: document.getElementById( 'view-list' ), trash: document.getElementById( 'view-trash' ), editor: document.getElementById( 'view-editor' ) };
@@ -79,16 +82,17 @@ provider.setCustomParameters({
 })
 document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
-const switchAccountBtn = document.getElementById( 'switch-account' );
-if ( switchAccountBtn ) {
-	switchAccountBtn.onclick = async () => {
-		userMenu.style.display = 'none';
-		try {
-			await signInWithPopup( auth, provider );
-		} catch ( e ) {
-			showToast( "切替失敗" );
-		}
-	};
+const switchAccountBtn = document.getElementById('switch-account');
+
+if (switchAccountBtn) {
+  switchAccountBtn.onclick = async () => {
+    userMenu.style.display = 'none';
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (e) {
+      showToast('アカウント切替失敗');
+    }
+  };
 }
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; signOut( auth ); location.hash = '#login'; }
 document.addEventListener( 'click', e => {
