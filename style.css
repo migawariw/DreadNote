@@ -8,7 +8,30 @@ body {
 	max-width: 100%;
 	overflow-x: hidden;
 }
+.loading-frame {
+    width: 100%;             /* 親コンテナ幅に100% */
+    max-width: 800px;        /* エディターの max-width を反映 */
+    position: relative;       /* 内部に絶対配置できるように */
+    background: #f9f9f9;
+    border: 2px dashed #ccc;
+}
 
+/* 縦横比を維持する */
+.loading-frame::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%; /* 縦横比 = 高さ/幅。例: 16:9 = 9/16 = 56.25% */
+}
+
+/* 中央に文字を置く */
+.loading-frame span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #888;
+    font-size: 14px;
+}
 .auth-loading {
   display: none;
 }
