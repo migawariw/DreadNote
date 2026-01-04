@@ -392,15 +392,33 @@ async function openEditor( id ) {
 	showEditor( data );
 }
 
-
-
-
-function showEditor( data ) {
+async function showEditor( data ) {
 	titleInput.value = data.title || '';
 	editor.innerHTML = data.content || '';
+
+	// =================================
+	// 追加: editor 内の [Image] を Firestore から Base64 に置き換える
+	const imgs = editor.querySelectorAll('img');
+	for (const img of imgs) {
+		const key = img.dataset.url; // ここに [Image] をセットしていた場合
+		if (!key) continue;
+		try {
+			const snap = await getDoc(doc(db, 'images', key));
+			if (snap.exists()) {
+				img.src = snap.data().data; // Base64
+			}
+		} catch (err) {
+			console.warn('Failed to load image', key, err);
+		}
+	}
+	// =================================
+
 	show( 'editor' );
 	window.scrollTo(0, 0);
 }
+
+
+
 let saveTimer = null;
 
 function debounceSave() {
@@ -496,12 +514,23 @@ editor.addEventListener('paste', async e => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
 
-            const blob = await new Promise(r => canvas.toBlob(r,'image/jpeg',0.8));
-            const blobUrl = URL.createObjectURL(blob);
+            // const blob = await new Promise(r => canvas.toBlob(r,'image/jpeg',0.8));
+            // const blobUrl = URL.createObjectURL(blob);
 
+            // const imgEl = document.createElement('img');
+            // imgEl.src = blobUrl;
+
+            // Base64 に変換
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Firestore に保存
+            const filename = `pasted_${Date.now()}`;
+            await setDoc(doc(db, "images", filename), { data: base64 });
+
+            // エディタに挿入
             const imgEl = document.createElement('img');
-            imgEl.src = blobUrl;
-            insertNodeWithCursor(imgEl, '[Image]', true);
+            imgEl.src = base64; // Firestore から取得も可
+            insertNodeWithCursor(imgEl, filename, true);
             return;
         }
     }
