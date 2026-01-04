@@ -576,10 +576,21 @@ const originalSizeMB = (originalSizeBytes / (1024*1024)).toFixed(2);
 				const pad = n => n.toString().padStart( 2, '0' );
 				const filename = `pasted_${now.getFullYear()}-${pad( now.getMonth() + 1 )}-${pad( now.getDate() )}_${pad( now.getHours() )}-${pad( now.getMinutes() )}-${pad( now.getSeconds() )}`;
 				await setDoc( doc( db, "images", filename ), { data: base64 } );
-
+// サイズ表示用関数
+function formatSize(bytes) {
+    if (bytes >= 1024 * 1024) {
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'; // 1MB以上 → MB、小数1桁
+    } else {
+        return Math.round(bytes / 1024) + ' KB';           // 1MB未満 → KB、整数
+    }
+}
 				const sizeBytes = base64.length;
-				const sizeMB = ( sizeBytes / ( 1024 * 1024 ) ).toFixed( 2 );
-				alert( `${now}: Original: ${originalSizeMB} MB, Saved:${sizeMB} MB | JPEG loops: ${loopCount} ` );
+				// サイズを文字列に変換
+const savedSizeStr = formatSize(sizeBytes);
+const originalSizeStr = formatSize(originalSizeBytes);
+
+// alert 表示
+alert(`${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}`);
 
 				insertImageFromBase64( base64, filename, true );
 			};
