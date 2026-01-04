@@ -584,6 +584,7 @@ editor.addEventListener('paste', async e => {
     if(imgRegex.test(text)){
         const imgEl = document.createElement('img');
         imgEl.src = text;
+				imgEl.dataset.url = text;
         insertNodeWithCursor(imgEl, text, true);
         return;
     }
@@ -600,19 +601,22 @@ editor.addEventListener('keydown', e => {
     if(!sel.rangeCount) return;
     const range = sel.getRangeAt(0);
 
+    // テキストノードなら親をチェック
     let node = range.startContainer;
     if(node.nodeType === 3) node = node.parentNode;
 
+    // imgや埋め込みdivを上にたどる
     while(node && !node.dataset?.url) node = node.parentNode;
     if(!node?.dataset?.url) return;
 
     e.preventDefault();
+    // 元URLに置き換え
     const urlText = document.createTextNode(node.dataset.url);
     node.replaceWith(urlText);
-
+    // 改行追加（必要なら）
     const br = document.createElement('br');
     urlText.after(br);
-
+    // カーソル位置をセット
     range.setStartAfter(urlText);
     range.collapse(true);
     sel.removeAllRanges();
