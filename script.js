@@ -26,6 +26,44 @@ const titleInput = document.getElementById( 'title' );
 const userIcon = document.getElementById( 'user-icon' );
 const userMenu = document.getElementById( 'user-menu' );
 
+const fontBtn = document.getElementById('font-size-btn');
+const fontPopup = document.getElementById('font-size-popup');
+const fontSlider = document.getElementById('font-size-slider');
+const fontValue = document.getElementById('font-size-value');
+const editorEl = document.getElementById('editor');
+
+// ポップアップ表示トグル
+fontBtn.onclick = e => {
+    e.stopPropagation();
+    fontPopup.style.display = (fontPopup.style.display === 'block') ? 'none' : 'block';
+		userMenu.style.display = 'none';
+};
+
+// スライダーで文字サイズ変更
+fontSlider.oninput = e => {
+    const size = fontSlider.value + 'px';
+		    // body全体に文字サイズを反映
+    document.body.style.fontSize = size;
+    editorEl.style.fontSize = size;
+    fontValue.textContent = size;
+    localStorage.setItem('dreadnote-font-size', fontSlider.value);
+};
+
+// 初期値を保存から反映
+const savedSize = localStorage.getItem('dreadnote-font-size');
+if (savedSize) {
+    editorEl.style.fontSize = savedSize + 'px';
+    fontSlider.value = savedSize;
+    fontValue.textContent = savedSize + 'px';
+}
+
+// ポップアップ外クリックで閉じる
+document.addEventListener('click', e => {
+    if (!fontPopup.contains(e.target) && e.target !== fontBtn) {
+        fontPopup.style.display = 'none';
+    }
+});
+
 // Dark mode toggle
 const darkBtn = document.getElementById( 'dark-btn' );
 
