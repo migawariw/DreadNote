@@ -83,7 +83,7 @@ provider.setCustomParameters( {
 document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
 
-document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; signOut( auth ); location.hash = '#login'; }
+document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null;  signOut( auth ); location.hash = '#login'; }
 document.addEventListener( 'click', e => {
 	if ( !userMenu.contains( e.target ) && e.target !== userIcon ) userMenu.style.display = 'none';
 	document.querySelectorAll( '.menu-popup' ).forEach( menu => {
