@@ -95,10 +95,11 @@ li {
 }
 
 li:hover {
-	background: #f2f2f7;
+	background: #fcfcfc;
 }
 
 li .memo-title {
+	/* font-size: 1em; */
 	font-weight: 610;  
 	flex: 1;
 	white-space: nowrap;
@@ -387,7 +388,7 @@ body.dark .menu-btn:hover,
 	position: absolute;
 	/* position: fixed; */
 	top: 70px;
-	right: calc((100% - 800px)/2 + 0px); /* 親の右端から16px */
+	right: 0px; /* 親の右端から16px */
 	background: #ffffff;
 	border: 1px solid #ddd;
 	border-radius: 8px;
@@ -510,7 +511,7 @@ body.dark .date-span {
 }
 
 body.dark li:hover {
-	background: #1c1c1e;
+	background: #101010;
 }
 
 body.dark #user-menu {

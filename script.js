@@ -45,6 +45,9 @@ fontSlider.oninput = e => {
 		    // body全体に文字サイズを反映
     document.body.style.fontSize = size;
     editorEl.style.fontSize = size;
+		memoList.querySelectorAll('li').forEach(li => {
+        li.style.fontSize = size;              // 一覧も反映
+    });
     fontValue.textContent = size;
     localStorage.setItem('dreadnote-font-size', fontSlider.value);
 };
@@ -55,6 +58,7 @@ if (savedSize) {
     editorEl.style.fontSize = savedSize + 'px';
     fontSlider.value = savedSize;
     fontValue.textContent = savedSize + 'px';
+		memoList.querySelectorAll('li').forEach(li => li.style.fontSize = savedSize + 'px');
 }
 
 // ポップアップ外クリックで閉じる
@@ -225,6 +229,7 @@ async function loadMemos() {
 		.forEach( m => {
 
 			const li = document.createElement( 'li' );
+			li.style.fontSize = savedSize + 'px'; // ← 一覧に反映
 
 			/* ========== li 全体を覆う a ========== */
 			const link = document.createElement( 'a' );
@@ -236,6 +241,7 @@ async function loadMemos() {
 			link.style.height = '100%';
 			link.style.textDecoration = 'none';
 			link.style.color = 'inherit';
+			link.style.fontSize = savedSize;
 			link.onclick = e => {
 				e.preventDefault();
 				location.hash = `#/editor/${m.id}`;
@@ -251,6 +257,7 @@ async function loadMemos() {
 			const titleSpan = document.createElement( 'span' );
 			titleSpan.className = 'memo-title';
 			titleSpan.textContent = m.title || 'Logged at';
+			// titleSpan.style.fontSize = savedSize;
 			li.appendChild( titleSpan );
 
 			/* =====================
