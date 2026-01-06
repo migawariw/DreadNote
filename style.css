@@ -84,7 +84,6 @@ ul {
 
 li {
 	list-style: none;
-	padding: 8px 8px 8px 8px;
 	border-bottom: 1px solid #ddd;
 	display: flex;
 	justify-content: space-between;
@@ -92,6 +91,15 @@ li {
 	user-select: none;
 	cursor: default;
 	flex-direction: column; /* これを追加 */
+    padding: 8px 12px; /* paddingは最後に書く必要があるらしい */
+
+}
+
+
+li a {
+    flex: 1; /* li 全体を覆う */
+    text-decoration: none;
+    color: inherit;
 }
 
 li:hover {
