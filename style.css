@@ -488,6 +488,9 @@ body.spread {
 	padding-right: 0;
 }
 
+body.spread section {
+	max-width: 100%;
+}
 /* Dark mode styles */
 body.dark {
 	background: #000;
