@@ -250,7 +250,7 @@ async function loadMemos() {
 
 			const titleSpan = document.createElement( 'span' );
 			titleSpan.className = 'memo-title';
-			titleSpan.textContent = m.title || 'Untitled';
+			titleSpan.textContent = m.title || 'Logged at';
 			li.appendChild( titleSpan );
 
 			/* =====================
@@ -351,7 +351,7 @@ function loadTrash() {
 
 			const titleSpan = document.createElement( 'span' );
 			titleSpan.className = 'memo-title';
-			titleSpan.textContent = m.title || 'Untitled';
+			titleSpan.textContent = m.title || 'Logged at';
 			li.appendChild( titleSpan );
 
 			// 右側の操作領域
