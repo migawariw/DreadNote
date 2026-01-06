@@ -91,7 +91,7 @@ li {
 	user-select: none;
 	cursor: default;
 	flex-direction: column; /* これを追加 */
-    padding: 8px 12px; /* paddingは最後に書く必要があるらしい */
+    padding: 8px 12px; /* paddingは最後に書く必要があるらしい*/
 
 }
 

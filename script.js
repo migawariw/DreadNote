@@ -636,6 +636,8 @@ const originalSizeStr = formatSize(originalSizeBytes);
 
 // alert 表示
 alert(`${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}`);
+showToast(`${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}`);
+
 
 				insertImageFromBase64( base64, filename, true );
 			};
