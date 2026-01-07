@@ -473,6 +473,23 @@ function debounceSave() {
 
 titleInput.addEventListener( 'input', debounceSave );
 editor.addEventListener( 'input', debounceSave );
+// ===== Italic → h2 変換 =====
+editor.addEventListener('beforeinput', e => {
+  if (e.inputType === 'formatItalic') {
+    e.preventDefault();
+
+    // 選択範囲 or カーソル位置を h2 に
+    document.execCommand('formatBlock', false, 'h2');
+
+    // 念のため i / em が残ってたら剥がす
+    editor.querySelectorAll('i, em').forEach(el => {
+      el.replaceWith(...el.childNodes);
+    });
+
+    // 保存トリガー
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
 
 async function saveMemo() {
 	if ( !currentMemoId ) return;
