@@ -552,7 +552,7 @@ editor.addEventListener( 'paste', async e => {
 
 		const img = document.createElement( 'img' );
 		img.src = blobUrl;
-		img.alt = 'pasted image';
+		// img.alt = 'pasted image';
 		if ( originalUrl ) img.dataset.url = originalUrl;
 		if ( isEmbed ) img.dataset.embed = '1';
 
