@@ -566,6 +566,47 @@ editor.addEventListener('beforeinput', e => {
     }
 });
 
+editor.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    let node = range.startContainer;
+
+    // テキストノードまで掘る
+    if (node.nodeType !== 3) node = node.firstChild;
+    if (!node || node.nodeType !== 3) return;
+
+    // 行全体を取得
+    const parentDiv = node.parentNode.closest('div') || node.parentNode;
+    const lineText = parentDiv.innerText.trim();
+
+    // URL判定
+    const urlRegex = /^https?:\/\/\S+/i;
+    if (!urlRegex.test(lineText)) return;
+
+    e.preventDefault();
+
+    // 既存の子を全部削除して a に置き換え
+    const a = document.createElement('a');
+    a.href = lineText;
+    a.textContent = lineText;
+    a.target = '_blank';
+
+    parentDiv.innerHTML = ''; // 元のテキスト削除
+    parentDiv.appendChild(a);
+
+    // 改行を追加してカーソル移動
+    const br = document.createElement('br');
+    parentDiv.after(br);
+
+    range.setStartAfter(br);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+});
+
 
 editor.addEventListener('keydown', e => {
   const sel = document.getSelection();
