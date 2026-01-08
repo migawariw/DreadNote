@@ -931,16 +931,21 @@ editor.addEventListener( 'keydown', e => {
 	// 元URLに置き換え
 	const urlText = document.createTextNode( node.dataset.url );
 	node.replaceWith( urlText );
-	// 改行追加（必要なら）
-	const br = document.createElement( 'br' );
-	urlText.after( br );
-	// カーソル位置をセット
-	range.setStartAfter( urlText );
-	range.collapse( true );
-	sel.removeAllRanges();
-	sel.addRange( range );
-	editor.dispatchEvent( new Event( 'input', { bubbles: true } ) );
-} );
+    const newRange = document.createRange();
+    newRange.selectNodeContents(urlText);
+
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+
+    // focus を明示的にセット（iOS 対応）
+    editor.focus();
+
+    // 改行追加（range 選択後に置く）
+    const br = document.createElement('br');
+    urlText.after(br);
+
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+});
 // editor.addEventListener('keydown', function(e) {
 //     if (e.key !== 'Delete' && e.key !== 'Backspace') return;
 
