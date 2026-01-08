@@ -168,16 +168,21 @@ li .memo-title {
 	/* iOS標準テキスト色 */
 }
 
-#editor a {
+/* #editor a {
 	color: #1c1c1e;
 	text-decoration: none;
+} */
+ /* editor 内のリンクにカーソルを合わせたときに手のアイコン */
+#editor a {
+    cursor: pointer;
+    text-decoration: underline !important; /* 下線を強制 */
 }
 
-#editor a:hover,
+/* #editor a:hover,
 #editor a:focus,
-#editor a:active {
-	text-decoration: none;
-}
+#editor a:active { */
+	/* text-decoration: none; */
+/* } */
 
 
 img {
@@ -533,9 +538,9 @@ body.dark #user-menu button {
 body.dark #user-menu button:hover {
 	background: #24242e;
 }
-body.dark #editor a {
+/* body.dark #editor a {
 	color: #f2f2f7;
-}
+} */
 
 
 /* ボタンの基本サイズ */
