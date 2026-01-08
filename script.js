@@ -549,22 +549,21 @@ editor.addEventListener('beforeinput', e => {
   }
 });
 
-// ===== Underline → 打ち消し線 変換 =====
 editor.addEventListener('beforeinput', e => {
-  if (e.inputType === 'formatUnderline') {
-    e.preventDefault();
+    if (e.inputType === 'formatUnderline') {
+        e.preventDefault(); // デフォルトの下線を止める
 
-    // 選択範囲 or カーソル位置を h2 に
-    document.execCommand('formatBlock', false, 's');
+        // 選択範囲に <s> を適用
+        document.execCommand('strikeThrough');
 
-    // 念のため i / em が残ってたら剥がす
-    editor.querySelectorAll('i,u, em').forEach(el => {
-      el.replaceWith(...el.childNodes);
-    });
+        // 念のため i / em / u が残ってたら剥がす
+        editor.querySelectorAll('i, em, u').forEach(el => {
+            el.replaceWith(...el.childNodes);
+        });
 
-    // 保存トリガー
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-  }
+        // 保存トリガー
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 });
 
 
