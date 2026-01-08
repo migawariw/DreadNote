@@ -549,6 +549,25 @@ editor.addEventListener('beforeinput', e => {
   }
 });
 
+// ===== Underline → 打ち消し線 変換 =====
+editor.addEventListener('beforeinput', e => {
+  if (e.inputType === 'formatUnderline') {
+    e.preventDefault();
+
+    // 選択範囲 or カーソル位置を h2 に
+    document.execCommand('formatBlock', false, 's');
+
+    // 念のため i / em が残ってたら剥がす
+    editor.querySelectorAll('i,u, em').forEach(el => {
+      el.replaceWith(...el.childNodes);
+    });
+
+    // 保存トリガー
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+
+
 editor.addEventListener('keydown', e => {
   const sel = document.getSelection();
   if (!sel.rangeCount) return;
