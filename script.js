@@ -565,36 +565,7 @@ editor.addEventListener('beforeinput', e => {
         editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
 });
-editor.addEventListener('input', e => {
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
 
-    // カーソルのある行の div を探す
-    let node = sel.anchorNode;
-    while (node && node !== editor && node.nodeType !== 1) node = node.parentNode;
-    if (!node || node === editor) return;
-
-    const text = node.innerText.trim();
-
-    // 行がリンクっぽければ a タグに置き換え
-    if (/^https?:\/\//.test(text) && node.querySelector('a') === null) {
-        const a = document.createElement('a');
-        a.href = text;
-        a.textContent = text;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-
-        node.innerHTML = '';
-        node.appendChild(a);
-
-        // カーソルを行末に移動
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-    }
-});
 
 
 editor.addEventListener('keydown', e => {
