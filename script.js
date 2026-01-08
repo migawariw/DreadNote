@@ -491,6 +491,43 @@ editor.addEventListener('beforeinput', e => {
   }
 });
 
+editor.addEventListener('keydown', e => {
+  const sel = document.getSelection();
+  if (!sel.rangeCount) return;
+
+  // カーソル直前のテキストを取得
+  const range = sel.getRangeAt(0);
+  const node = range.startContainer;
+  const offset = range.startOffset;
+
+  if (node.nodeType === 3) { // テキストノード
+    const text = node.textContent;
+    // ^_^ が直前にあるか？
+    if (text.slice(offset - 3, offset) === '^_^') {
+      e.preventDefault();
+
+      // ^_^ を削除
+      node.deleteData(offset - 3, 3);
+
+      // 選択範囲を h2 に
+      document.execCommand('formatBlock', false, 'h2');
+
+      // 念のため i/em を剥がす
+      editor.querySelectorAll('i, em').forEach(el => el.replaceWith(...el.childNodes));
+
+      // 保存トリガー
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+});
+editor.addEventListener('keydown', e => {
+    // Windows: Ctrl+I / Mac: Cmd+I
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+        e.preventDefault(); // ブラウザのデフォルト動作を止める
+        document.execCommand('italic'); // 選択中をイタリックに
+    }
+});
+
 async function saveMemo() {
 	if ( !currentMemoId ) return;
 
