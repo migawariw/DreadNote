@@ -177,6 +177,10 @@ li .memo-title {
     cursor: pointer;
     text-decoration: underline !important; /* 下線を強制 */
 }
+editor * {
+    -webkit-user-select: text; /* iOS でテキスト選択可能にする */
+    user-select: text;
+}
 
 /* #editor a:hover,
 #editor a:focus,
