@@ -22,7 +22,7 @@ const views = { login: document.getElementById( 'view-login' ), list: document.g
 const memoList = document.getElementById( 'memo-list' );
 const trashList = document.getElementById( 'trash-list' );
 const editor = document.getElementById( 'editor' );
-const titleInput = document.getElementById( 'title' );
+// const titleInput = document.getElementById( 'title' );
 const userIcon = document.getElementById( 'user-icon' );
 const userMenu = document.getElementById( 'user-menu' );
 
@@ -438,8 +438,32 @@ async function openEditor( id ) {
 }
 
 async function showEditor( data ) {
-	titleInput.value = data.title || '';
-	editor.innerHTML = data.content || '';
+ // 既存タイトルを本文の1行目に追加
+const content = data.content || '';
+
+// // 既存タイトルがあれば先頭行に追加
+// if (data.title && !content.startsWith(data.title)) {
+//     // 1行目として <div> または <p> にするのが安全
+//     content = `<div>${data.title}</div>` + content;
+// }
+
+// 改行を <div> に変換してセット
+    editor.innerHTML = content
+        .split('\n')
+        .map(line => line || '<div><br></div>')  // 空行も div に変換
+        .join('');
+				editor.style.fontSize = savedSize + 'px';
+
+    // カーソルを先頭に移動
+    const firstLine = editor.firstChild;
+    if (firstLine) {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(firstLine);
+        range.collapse(true); // 先頭にセット
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
 
 	// =================================
 	// 追加: editor 内の [Image] を Firestore から Base64 に置き換える
@@ -471,8 +495,18 @@ function debounceSave() {
 	saveTimer = setTimeout( saveMemo, 500 );
 }
 
-titleInput.addEventListener( 'input', debounceSave );
+// titleInput.addEventListener( 'input', debounceSave );
 editor.addEventListener( 'input', debounceSave );
+editor.addEventListener('input', () => {
+    if (!currentMemoId) return;
+    const lines = editor.innerText.split('\n');
+    const title = lines[0].trim();
+    const meta = getMeta(currentMemoId);
+    if (meta && meta.title !== title) {
+        updateMeta(currentMemoId, { title });
+    }
+});
+
 // ===== Italic → h2 変換 =====
 editor.addEventListener('beforeinput', e => {
   if (e.inputType === 'formatItalic') {
@@ -529,24 +563,21 @@ editor.addEventListener('keydown', e => {
 });
 
 async function saveMemo() {
-	if ( !currentMemoId ) return;
+    if (!currentMemoId) return;
 
-	const title =
-		titleInput.value.trim() ||
-		editor.innerText.split( '\n' )[0]?.trim() || '';
+    const lines = editor.innerText.split('\n');
+    const title = lines[0].trim();       // 1行目をタイトルに
+    const content = editor.innerHTML;    // 本文全体はHTMLで保存
 
-	const content = editor.innerHTML;
-	const updated = Date.now();
+    memoCache[currentMemoId] = { title, content, updated: Date.now() };
 
-	memoCache[currentMemoId] = { title, content, updated };
+    await setDoc(
+        doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId),
+        { content, updated: Date.now() },
+        { merge: true }
+    );
 
-	await setDoc(
-		doc( db, 'users', auth.currentUser.uid, 'memos', currentMemoId ),
-		{ title, content, updated },
-		{ merge: true }
-	);
-
-	await updateMeta( currentMemoId, { title, updated } );
+    await updateMeta(currentMemoId, { title, updated: Date.now() });
 }
 
 async function saveMeta() {
