@@ -1,59 +1,74 @@
-import { getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 0️⃣ モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getRedirectResult } from
-	"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getDocs, getFirestore, collection, addDoc, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+//1️⃣ Firebase 初期化・キャッシュ
+// RAMに一時的に保存（リロードで消える）
 let metaCache = null;        // ← 目次箱
 const memoCache = {};       // ← 本文キャッシュ
 
-/* Firebase初期化 */
+// firebase
 const firebaseConfig = { apiKey: "AIzaSyCdDf0GH80PoGlcbk2yjlaVQfP01Gk9m18", authDomain: "noteeditor-ba1db.firebaseapp.com", projectId: "noteeditor-ba1db" };
+// ✅ 呼び出しの可能性あり（内部で軽くプロジェクト確認など）
 const app = initializeApp( firebaseConfig );
+// ❌ ローカルオブジェクト作成のみ → 通信なし
 const auth = getAuth( app );
+// ❌ ローカルオブジェクト作成のみ → 通信なし
 const db = getFirestore( app );
+// ✅ 確実に呼び出し発生（サーバーに問い合わせて認証確認）
 getRedirectResult( auth ).catch( () => { } );
 
-/* DOM要素 */
+/* 2️⃣DOM要素格納 このブロックはFirebaseへの通信無し*/
+// すなわちHTML内の各要素（ログイン画面、一覧画面、ゴミ箱画面、エディター画面）を変数に格納する
 const views = { login: document.getElementById( 'view-login' ), list: document.getElementById( 'view-list' ), trash: document.getElementById( 'view-trash' ), editor: document.getElementById( 'view-editor' ) };
-// const emailInput = document.getElementById( 'email' );
-// const passwordInput = document.getElementById( 'password' );
+//メモ一覧、ゴミ箱、エディター、ユーザーアイコン、メニュー等を表示する要素を取得している
 const memoList = document.getElementById( 'memo-list' );
 const trashList = document.getElementById( 'trash-list' );
 const editor = document.getElementById( 'editor' );
-// const titleInput = document.getElementById( 'title' );
 const userIcon = document.getElementById( 'user-icon' );
 const userMenu = document.getElementById( 'user-menu' );
-
 const fontBtn = document.getElementById( 'font-size-btn' );
 const fontPopup = document.getElementById( 'font-size-popup' );
 const fontSlider = document.getElementById( 'font-size-slider' );
 const fontValue = document.getElementById( 'font-size-value' );
 const editorEl = document.getElementById( 'editor' );
+const toast = document.getElementById( 'toast' );
+const darkBtn = document.getElementById( 'dark-btn' );
+const spreadBtn = document.getElementById( 'spread-btn' );
 
-// ポップアップ表示トグル
+// 3️⃣UI操作（フォント、ダークモードなど）
+userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
+// Aa押した時の挙動
 fontBtn.onclick = e => {
+	//ボタンを親要素に影響させない
 	e.stopPropagation();
+	// スライダーのやつ、fontPopup表示されていれば閉じる、閉じていれば表示する
 	fontPopup.style.display = ( fontPopup.style.display === 'block' ) ? 'none' : 'block';
+	// 押されたらユーザーメニューを非表示にする
 	userMenu.style.display = 'none';
 };
 
-// スライダーで文字サイズ変更
+// スライダーが確定されたら文字サイズ変更
 fontSlider.oninput = e => {
 	const size = fontSlider.value + 'px';
-	// body全体に文字サイズを反映
+	// body全体、に文字サイズを反映
 	document.body.style.fontSize = size;
+	// editorElはHTMLのid editorのこと
 	editorEl.style.fontSize = size;
+	//一覧画面もサイズ反映
 	memoList.querySelectorAll( 'li' ).forEach( li => {
-		li.style.fontSize = size;              // 一覧も反映
+		li.style.fontSize = size;
 	} );
+	//スライダーの横の文字も反映
 	fontValue.textContent = size;
+	//その端末にフォントサイズが残る
 	localStorage.setItem( 'dreadnote-font-size', fontSlider.value );
 };
 
-// 初期値を保存から反映
+// 端末から反映
 const savedSize = localStorage.getItem( 'dreadnote-font-size' );
+//端末に初期値があればそれにする　ずれの原因これじゃね？まあいいや
 if ( savedSize ) {
 	editorEl.style.fontSize = savedSize + 'px';
 	fontSlider.value = savedSize;
@@ -61,18 +76,18 @@ if ( savedSize ) {
 	memoList.querySelectorAll( 'li' ).forEach( li => li.style.fontSize = savedSize + 'px' );
 }
 
-// ポップアップ外クリックで閉じる
+// ポップアップ外クリックでスライダーとか閉じる
 document.addEventListener( 'click', e => {
 	if ( !fontPopup.contains( e.target ) && e.target !== fontBtn ) {
 		fontPopup.style.display = 'none';
 	}
 } );
 
-// Dark mode toggle
-const darkBtn = document.getElementById( 'dark-btn' );
 
+//ダークモードにするかどうかは端末に保存
 if ( darkBtn ) {
 	darkBtn.onclick = ( e ) => {
+		//ボタンを親要素に影響させない
 		e.stopPropagation();
 		document.body.classList.toggle( 'dark' );
 		localStorage.setItem(
@@ -81,9 +96,7 @@ if ( darkBtn ) {
 		);
 	};
 }
-// Spread mode toggle
-const spreadBtn = document.getElementById( 'spread-btn' );
-
+// Spread mode toggle（ダークと同様）
 if ( spreadBtn ) {
 	spreadBtn.onclick = ( e ) => {
 		e.stopPropagation();
@@ -95,37 +108,16 @@ if ( spreadBtn ) {
 	};
 }
 
-// 初期化（保存状態を反映）
+// 端末から保存状態を反映
 if ( localStorage.getItem( 'dreadnote-dark' ) === '1' ) {
 	document.body.classList.add( 'dark' );
 }
 if ( localStorage.getItem( 'dreadnote-spread' ) === '1' ) {
 	document.body.classList.add( 'spread' );
 }
-const toast = document.getElementById( 'toast' );
-const preview = document.getElementById( 'preview' );
-const previewContent = document.getElementById( 'preview-content' );
-const copyBtn = document.getElementById( 'copy-note' );
-const deleteBtn = document.getElementById( 'delete-note' );
-const closePreview = document.getElementById( 'close-preview' );
 
-let currentMemoId = null;
-let longPressTimer = null;
-// let memosCache=[];
 
-/* トースト表示 */
-function showToast( msg, d = 2000 ) { toast.textContent = msg; toast.classList.add( 'show' ); setTimeout( () => toast.classList.remove( 'show' ), d ); }
-function show( view ) { Object.values( views ).forEach( v => v.hidden = true ); views[view].hidden = false; }
-
-/* Auth */
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters( {
-	prompt: 'select_account'
-} )
-document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
-userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
-
-document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
+// 他の場所をクリックしたらメニューが閉じる
 document.addEventListener( 'click', e => {
 	if ( !userMenu.contains( e.target ) && e.target !== userIcon ) userMenu.style.display = 'none';
 	document.querySelectorAll( '.menu-popup' ).forEach( menu => {
@@ -134,7 +126,20 @@ document.addEventListener( 'click', e => {
 	} );
 } );
 
-/* Auth state */
+/* 4️⃣トースト表示（2.000秒間）の関数設定 */
+function showToast( msg, d = 2000 ) { toast.textContent = msg; toast.classList.add( 'show' ); setTimeout( () => toast.classList.remove( 'show' ), d ); }
+function show( view ) { Object.values( views ).forEach( v => v.hidden = true ); views[view].hidden = false; }
+
+/* 5️⃣6️⃣ 認証処理（Google ログイン / ログアウト） */
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters( {
+	prompt: 'select_account'
+} )
+
+document.getElementById( 'google-login' ).onclick = async () => { try { await signInWithPopup( auth, provider ); } catch ( e ) { showToast( "Googleログイン失敗: " + e.message ); } };
+
+document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
+
 onAuthStateChanged( auth, async user => {
 	// ★ ここで「画面を表示していい」と宣言
 	document.body.classList.remove( 'auth-loading' );
@@ -158,6 +163,7 @@ window.addEventListener( 'hashchange', () => {
 	navigate();
 } );
 
+//7️⃣ メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
 async function loadMetaOnce() {
 	if ( metaCache ) return metaCache;
 
@@ -219,6 +225,7 @@ async function loadMetaOnce() {
 
 	return metaCache;
 }
+
 async function loadMemos() {
 	await loadMetaOnce();
 	memoList.innerHTML = '';
@@ -250,9 +257,7 @@ async function loadMemos() {
 
 
 
-			/* =====================
-				 左側タイトル
-				 ===================== */
+			//左側タイトル
 
 			const titleSpan = document.createElement( 'span' );
 			titleSpan.className = 'memo-title';
@@ -260,9 +265,7 @@ async function loadMemos() {
 			// titleSpan.style.fontSize = savedSize;
 			li.appendChild( titleSpan );
 
-			/* =====================
-				 右側（日付 + メニュー）
-				 ===================== */
+			// 右側（日付 + メニュー）
 			const rightDiv = document.createElement( 'div' );
 			rightDiv.className = 'memo-right';
 
@@ -314,13 +317,9 @@ async function loadMemos() {
 			};
 
 			rightDiv.append( dateSpan, menuBtn, menuPopup );
-			/* =====================
-	 aタグの中に右側も入れる
-	 ===================== */
+			//aタグの中に右側も入れる
 			li.appendChild( rightDiv );
-			/* =====================
-	 li に a を追加
-	 ===================== */
+			//li に a を追加
 			memoList.appendChild( li );
 		} );
 }
@@ -423,6 +422,8 @@ function loadTrash() {
 			trashList.appendChild( li );
 		} );
 }
+//currentMemoIdはトースト関係ないのでこっちにおく
+let currentMemoId = null;
 async function openEditor( id ) {
 	currentMemoId = id;
 
@@ -498,8 +499,6 @@ async function showEditor( data ) {
 	window.scrollTo( 0, 0 );
 }
 
-
-
 let saveTimer = null;
 
 function debounceSave() {
@@ -507,7 +506,45 @@ function debounceSave() {
 	saveTimer = setTimeout( saveMemo, 500 );
 }
 
-// titleInput.addEventListener( 'input', debounceSave );
+//7️⃣-2 メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
+async function saveMemo() {
+	if ( !currentMemoId ) return;
+
+	const lines = editor.innerText.split( '\n' );
+	const title = lines[0].trim();       // 1行目をタイトルに
+	const content = editor.innerHTML;    // 本文全体はHTMLで保存
+
+	memoCache[currentMemoId] = { title, content, updated: Date.now() };
+
+	await setDoc(
+		doc( db, 'users', auth.currentUser.uid, 'memos', currentMemoId ),
+		{ content, updated: Date.now() },
+		{ merge: true }
+	);
+
+	await updateMeta( currentMemoId, { title, updated: Date.now() } );
+}
+
+async function saveMeta() {
+	await setDoc(
+		doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
+		metaCache
+	);
+}
+
+function getMeta( id ) {
+	return metaCache.memos.find( m => m.id === id );
+}
+
+async function updateMeta( id, fields ) {
+	const m = getMeta( id );
+	if ( !m ) return;
+	Object.assign( m, fields );
+	await saveMeta();
+}
+
+//8️⃣ エディターイベント（入力、貼り付け、キーボード操作）
+//タイトル取得
 editor.addEventListener( 'input', debounceSave );
 editor.addEventListener( 'input', () => {
 	if ( !currentMemoId ) return;
@@ -566,8 +603,6 @@ editor.addEventListener( 'beforeinput', e => {
 	}
 } );
 
-
-
 editor.addEventListener( 'keydown', e => {
 	const sel = document.getSelection();
 	if ( !sel.rangeCount ) return;
@@ -604,44 +639,6 @@ editor.addEventListener( 'keydown', e => {
 		document.execCommand( 'italic' ); // 選択中をイタリックに
 	}
 } );
-
-async function saveMemo() {
-	if ( !currentMemoId ) return;
-
-	const lines = editor.innerText.split( '\n' );
-	const title = lines[0].trim();       // 1行目をタイトルに
-	const content = editor.innerHTML;    // 本文全体はHTMLで保存
-
-	memoCache[currentMemoId] = { title, content, updated: Date.now() };
-
-	await setDoc(
-		doc( db, 'users', auth.currentUser.uid, 'memos', currentMemoId ),
-		{ content, updated: Date.now() },
-		{ merge: true }
-	);
-
-	await updateMeta( currentMemoId, { title, updated: Date.now() } );
-}
-
-async function saveMeta() {
-	await setDoc(
-		doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
-		metaCache
-	);
-}
-
-function getMeta( id ) {
-	return metaCache.memos.find( m => m.id === id );
-}
-
-async function updateMeta( id, fields ) {
-	const m = getMeta( id );
-	if ( !m ) return;
-	Object.assign( m, fields );
-	await saveMeta();
-}
-// updateMeta(currentMemoId, title);
-
 
 /* Paste処理（画像・埋め込み・テキスト対応 完全版） */
 editor.addEventListener( 'paste', async e => {
@@ -848,68 +845,68 @@ editor.addEventListener( 'paste', async e => {
 		return;
 	}
 
-// URL付き画像も含むリンク
-    const imgRegex = /https?:\/\/\S+\.(?:png|jpg|jpeg|gif)/i;
-    if (imgRegex.test(text)) {
-        const aEl = document.createElement('a');
-        aEl.href = text;
-        aEl.dataset.url = text;
-        aEl.target = '_blank';
-        const imgEl = document.createElement('img');
-        imgEl.src = text;
-        aEl.appendChild(imgEl);
-        insertNodeWithCursor(aEl, text, true);
-        return;
-    }
+	// URL付き画像も含むリンク
+	const imgRegex = /https?:\/\/\S+\.(?:png|jpg|jpeg|gif)/i;
+	if ( imgRegex.test( text ) ) {
+		const aEl = document.createElement( 'a' );
+		aEl.href = text;
+		aEl.dataset.url = text;
+		aEl.target = '_blank';
+		const imgEl = document.createElement( 'img' );
+		imgEl.src = text;
+		aEl.appendChild( imgEl );
+		insertNodeWithCursor( aEl, text, true );
+		return;
+	}
 
-// 通常リンク
-const urlRegex = /(https?:\/\/[^\s]+)/i;
-const urlMatch = text.match(urlRegex);
-if (urlMatch) {
-    const aEl = document.createElement('a');
-    aEl.href = urlMatch[0];        // マッチしたURLをhrefに
-    aEl.textContent = urlMatch[0]; // そのままテキストとして表示
-    aEl.target = '_blank';
-    aEl.dataset.url = urlMatch[0]; // Deleteで戻す用
-    insertNodeWithCursor(aEl, urlMatch[0], false);
-    return;
-}
+	// 通常リンク
+	const urlRegex = /(https?:\/\/[^\s]+)/i;
+	const urlMatch = text.match( urlRegex );
+	if ( urlMatch ) {
+		const aEl = document.createElement( 'a' );
+		aEl.href = urlMatch[0];        // マッチしたURLをhrefに
+		aEl.textContent = urlMatch[0]; // そのままテキストとして表示
+		aEl.target = '_blank';
+		aEl.dataset.url = urlMatch[0]; // Deleteで戻す用
+		insertNodeWithCursor( aEl, urlMatch[0], false );
+		return;
+	}
 
 	// 通常テキスト
 	insertNodeWithCursor( document.createTextNode( text ), null, false );
 } );
 
-editor.addEventListener('click', e => {
-    const a = e.target.closest('a');
-    if (!a) return;
-    e.preventDefault(); // デフォルトのカーソル移動を防ぐ
-    const href = a.href;
-    if (href) window.open(href, '_blank'); // 新しいタブで開く
-});
-editor.addEventListener('touchend', e => {
-    const a = e.target.closest('a');
-    if (!a) return;
-    const href = a.href;
-    if (href) window.open(href, '_blank');
-});
+editor.addEventListener( 'click', e => {
+	const a = e.target.closest( 'a' );
+	if ( !a ) return;
+	e.preventDefault(); // デフォルトのカーソル移動を防ぐ
+	const href = a.href;
+	if ( href ) window.open( href, '_blank' ); // 新しいタブで開く
+} );
+editor.addEventListener( 'touchend', e => {
+	const a = e.target.closest( 'a' );
+	if ( !a ) return;
+	const href = a.href;
+	if ( href ) window.open( href, '_blank' );
+} );
 
-editor.addEventListener('keydown', (e) => {
-    // Undo (Cmd/Ctrl + Z)
-    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        // @ts-ignore
-        document.execCommand('undo');
-        return;
-    }
+editor.addEventListener( 'keydown', ( e ) => {
+	// Undo (Cmd/Ctrl + Z)
+	if ( ( e.metaKey || e.ctrlKey ) && !e.shiftKey && e.key.toLowerCase() === 'z' ) {
+		e.preventDefault();
+		// @ts-ignore
+		document.execCommand( 'undo' );
+		return;
+	}
 
-    // Redo (Cmd/Ctrl + Shift + Z)
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        // @ts-ignore
-        document.execCommand('redo');
-        return;
-    }
-});
+	// Redo (Cmd/Ctrl + Shift + Z)
+	if ( ( e.metaKey || e.ctrlKey ) && e.shiftKey && e.key.toLowerCase() === 'z' ) {
+		e.preventDefault();
+		// @ts-ignore
+		document.execCommand( 'redo' );
+		return;
+	}
+} );
 
 // Delete/Backspaceで元URLに戻す
 editor.addEventListener( 'keydown', e => {
@@ -931,83 +928,23 @@ editor.addEventListener( 'keydown', e => {
 	// 元URLに置き換え
 	const urlText = document.createTextNode( node.dataset.url );
 	node.replaceWith( urlText );
-    const newRange = document.createRange();
-    newRange.selectNodeContents(urlText);
+	const newRange = document.createRange();
+	newRange.selectNodeContents( urlText );
 
-    sel.removeAllRanges();
-    sel.addRange(newRange);
+	sel.removeAllRanges();
+	sel.addRange( newRange );
 
-    // focus を明示的にセット（iOS 対応）
-    editor.focus();
+	// focus を明示的にセット（iOS 対応）
+	editor.focus();
 
-    // 改行追加（range 選択後に置く）
-    const br = document.createElement('br');
-    urlText.after(br);
+	// 改行追加（range 選択後に置く）
+	const br = document.createElement( 'br' );
+	urlText.after( br );
 
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-});
-// editor.addEventListener('keydown', function(e) {
-//     if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+	editor.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+} );
 
-//     var sel = document.getSelection();
-//     if (!sel.rangeCount) return;
-//     var range = sel.getRangeAt(0);
-
-//     var node = range.startContainer;
-
-//     if (node.nodeType === 1) {
-//         // element node の場合は最初のテキストノードに降りる
-//         node = node.firstChild;
-//     }
-
-//     if (!node || node.nodeType !== 3) return; // テキストノードでない場合は何もしない
-
-//     var text = node.textContent || '';
-//     var urlRegex = /https?:\/\/[^\s]+/g;
-//     var match;
-//     var insideUrl = false;
-//     var urlStart = 0, urlEnd = 0;
-
-//     while ((match = urlRegex.exec(text)) !== null) {
-//         urlStart = match.index;
-//         urlEnd = match.index + match[0].length;
-//         if (range.startOffset >= urlStart && range.startOffset <= urlEnd) {
-//             insideUrl = true;
-//             break;
-//         }
-//     }
-
-//     if (!insideUrl) return; // URL 内でなければ通常 Delete
-
-//     e.preventDefault();
-
-//     // URL 全体を削除
-//     var newText = text.slice(0, urlStart) + text.slice(urlEnd);
-//     node.textContent = newText;
-
-//     // カーソルを削除した URL の先頭に置く
-//     range.setStart(node, urlStart);
-//     range.collapse(true);
-//     sel.removeAllRanges();
-//     sel.addRange(range);
-
-//     editor.dispatchEvent(new Event('input', { bubbles: true }));
-// });
-
-/* Preview */
-function showPreview( id, title, content ) {
-	previewContent.innerHTML = `<strong>${title}</strong><br>${content}`;
-	preview.style.display = 'block';
-	copyBtn.onclick = () => { navigator.clipboard.writeText( content || '' ); showToast( 'Copied' ); }
-	deleteBtn.onclick = async () => {
-		await updateMeta( id, { deleted: true, updated: Date.now() } );
-		preview.style.display = 'none';
-		showToast( 'Moved to Trash' );
-		loadMemos(); // ← これ
-	}
-	closePreview.onclick = () => preview.style.display = 'none';
-}
-
+/* 9️⃣ ナビゲーション・新規作成ボタン*/
 document.getElementById( 'go-trash' ).onclick = () => { location.hash = '#/trash'; }
 document.getElementById( 'back-list' ).onclick = () => { location.hash = '#/list'; }
 document.getElementById( 'back' ).onclick = () => { if ( history.length > 1 ) history.back(); else location.hash = '#/list'; }
