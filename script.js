@@ -46,6 +46,7 @@ const spreadBtn = document.getElementById( 'spread-btn' );
 
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarToggle2 = document.getElementById('sidebar-toggle2');
 
 sidebarToggle.onclick = async () => {
   sidebar.classList.toggle('show');
@@ -57,6 +58,11 @@ sidebarToggle.onclick = async () => {
     await loadMemos();      // メモ一覧を描画
   }
 };
+function closeSidebar() {
+  sidebar.classList.remove('show');
+}
+
+sidebarToggle2.onclick = closeSidebar;
 
 editor.addEventListener( 'blur', () => {
 	setTimeout( () => {
