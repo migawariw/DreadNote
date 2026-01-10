@@ -168,11 +168,6 @@ li .memo-title {
 	/* iOS標準テキスト色 */
 }
 
-/* #editor a {
-	color: #1c1c1e;
-	text-decoration: none;
-} */
- /* editor 内のリンクにカーソルを合わせたときに手のアイコン */
 #editor a {
     cursor: pointer;
     text-decoration: underline !important; /* 下線を強制 */
@@ -185,17 +180,15 @@ li .memo-title {
 	/* 👇 Safariが「普通のリンク」と認識する条件 */
 	display: inline;
 	position: static;
-}
-/* editor * {
-    -webkit-user-select: text; 
-    user-select: text;
-} */
+	color: #0071e3;
 
-/* #editor a:hover,
-#editor a:focus,
-#editor a:active { */
-	/* text-decoration: none; */
-/* } */
+}
+#editor a:visited {
+	color: #754cafb7;
+}
+body.dark #editor a:visited {
+	color: #c7a3f9b7;
+}
 
 
 img {
