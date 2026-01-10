@@ -26,6 +26,8 @@ const views = { login: document.getElementById( 'view-login' ), list: document.g
 const memoList = document.getElementById( 'memo-list' );
 const trashList = document.getElementById( 'trash-list' );
 const editor = document.getElementById( 'editor' );
+editor.contentEditable = 'false';
+
 const userIcon = document.getElementById( 'user-icon' );
 const userMenu = document.getElementById( 'user-menu' );
 const fontBtn = document.getElementById( 'font-size-btn' );
@@ -36,6 +38,13 @@ const editorEl = document.getElementById( 'editor' );
 const toast = document.getElementById( 'toast' );
 const darkBtn = document.getElementById( 'dark-btn' );
 const spreadBtn = document.getElementById( 'spread-btn' );
+
+editor.addEventListener( 'blur', () => {
+	setTimeout( () => {
+		editor.contentEditable = 'false';
+	}, 0 );
+} );
+
 
 // 3️⃣UI操作（フォント、ダークモードなど）
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
@@ -875,20 +884,78 @@ editor.addEventListener( 'paste', async e => {
 	// 通常テキスト
 	insertNodeWithCursor( document.createTextNode( text ), null, false );
 } );
-
 editor.addEventListener( 'click', e => {
 	const a = e.target.closest( 'a' );
 	if ( !a ) return;
-	e.preventDefault(); // デフォルトのカーソル移動を防ぐ
-	const href = a.href;
-	if ( href ) window.open( href, '_blank' ); // 新しいタブで開く
+
+	// 編集中だけJS制御
+	if ( editor.contentEditable === 'true' ) {
+		e.preventDefault();
+		return;
+	}
+
+	// 閲覧中は何もしない（Safariに任せる）
 } );
-editor.addEventListener( 'touchend', e => {
-	const a = e.target.closest( 'a' );
-	if ( !a ) return;
-	const href = a.href;
-	if ( href ) window.open( href, '_blank' );
+
+
+let touchStartTime = 0;
+let touchMoved = false;
+let longPress = false;
+let lastTouch = null;
+
+
+editor.addEventListener( 'touchstart', e => {
+	lastTouch = e.touches[0];   // ← ★この1行を追加
+	touchStartTime = Date.now();
+	touchMoved = false;
+	longPress = false;
+
+	// リンク・画像・埋め込み上は長押し候補
+	if (
+		e.target.closest( 'a' ) ||
+		e.target.closest( 'img' ) ||
+		e.target.closest( 'iframe' ) ||
+		e.target.closest( '.video' ) ||
+		e.target.closest( '.twitter' ) ||
+		e.target.closest( '.instagram' )
+	) {
+		longPress = true;
+	}
 } );
+
+editor.addEventListener( 'touchmove', () => {
+	touchMoved = true;
+} );
+
+editor.addEventListener( 'touchend', () => {
+	// 🔒 リンクプレビュー後は何もしない
+	if ( longPress ) return;
+
+	const dt = Date.now() - touchStartTime;
+
+	// 短タップだけ編集開始
+	if (
+		dt < 300 &&
+		!touchMoved &&
+		editor.contentEditable === 'false'
+	) {
+		editor.contentEditable = 'true';
+		// editor.focus();
+		const x = lastTouch.clientX;
+		const y = lastTouch.clientY;
+
+		const range = document.caretRangeFromPoint( x, y );
+		if ( range ) {
+			const sel = window.getSelection();
+			sel.removeAllRanges();
+			sel.addRange( range );
+		}
+
+		editor.focus( { preventScroll: true } );
+	}
+} );
+
+
 
 editor.addEventListener( 'keydown', ( e ) => {
 	// Undo (Cmd/Ctrl + Z)

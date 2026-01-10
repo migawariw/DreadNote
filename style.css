@@ -176,11 +176,20 @@ li .memo-title {
 #editor a {
     cursor: pointer;
     text-decoration: underline !important; /* 下線を強制 */
+	/* 👇 iOS長押し必須 */
+	-webkit-touch-callout: default;
+	-webkit-user-select: text;
+	user-select: text;
+	pointer-events: auto;
+
+	/* 👇 Safariが「普通のリンク」と認識する条件 */
+	display: inline;
+	position: static;
 }
-editor * {
-    -webkit-user-select: text; /* iOS でテキスト選択可能にする */
+/* editor * {
+    -webkit-user-select: text; 
     user-select: text;
-}
+} */
 
 /* #editor a:hover,
 #editor a:focus,
