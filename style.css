@@ -1,6 +1,6 @@
 body {
 	margin: 0;
-	padding: 20px 20px 300px 20px;
+	padding: 0px 20px 300px 20px;
 	font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 	font-size: 17px;
 	background: #ffffff;
@@ -14,14 +14,18 @@ body {
   left: 0;
   top: 0;
   bottom:0;
-  width: 250px;
-  height: 100vh;
+  width: 300px;
+  height: 100dvh;
   background: #f9f9f9;
   box-shadow: 2px 0 5px rgba(0,0,0,0.2);
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   overflow-y: auto;
   z-index: 1000;
+  padding-right: 10px ;
+  padding-bottom: env(safe-area-inset-bottom); /* タブバー回避 */
+    border-radius: 10px;       /* ← ここが丸くするポイント */
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);  /* 立体感用 */
 }
 body.dark #sidebar{
 	background: black;
@@ -36,8 +40,19 @@ body.dark #sidebar{
   top: 10px;
   left: 10px;
   z-index: 1100;
+  padding-top: 0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
+body.dark #sidebar-toggle {
+  background: #000000;
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+/* section {
+	padding-top: 0;
+} */
 
 .auth-loading {
   display: none;
@@ -95,12 +110,15 @@ section {
 input,
 button {
 	font-size: 17px;
-	margin: 4px 0;
+	margin: 0px 0;
 }
 
 button {
-	color: #0b62e5;
+	color: #434343;
 	border: none;
+}
+body.dark button {
+	color: #ffffff;
 }
 #back{
 	color: #8b8b8b;
@@ -181,13 +199,13 @@ li .memo-title {
 
 #editor {
 	min-height: 70vh;
-	padding-top: 100px;
+	padding-top: 50px;
 	outline: none;
 	white-space: pre-wrap;
 	word-break: break-word;
 	border-top: none;
 	/* border-top: 1px solid #ccc; */
-	padding-top: 17px;
+	/* padding-top: 17px; */
 
 	/* iPhoneメモ風 16pxから変更*/
 	font-size: 16.5px;
@@ -219,7 +237,20 @@ body.dark #editor a:visited {
 	color: #c7a3f9b7;
 } */
 
+#sidebar-toggle {
+  font-size: 32px;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  padding-top: 0px;
+  z-index: 1100;
+  transition: transform 0s ease, opacity 0s ease;
+}
 
+#sidebar-toggle.hide {
+  transform: translateY(-100%); /* 上に隠す */
+  opacity: 0;
+}
 img {
 	width: 100%;
 	height: auto;
@@ -242,6 +273,7 @@ img {
 	height: 100%;
 	border: 0;
 	margin: 0;
+	z-index: 1200;
 }
 
 /* TikTok 用（縦長） */
@@ -457,6 +489,7 @@ body.dark .menu-btn:hover,
 	display: block;
 	width: 100%;
 	padding: 10px 16px;
+	color: #0071e3;
 	background: none;
 	border: none;
 	text-align: left;
@@ -506,6 +539,15 @@ button {
 	background-color: transparent;
 }
 
+#sidebar .flex-between {
+    position: sticky; /* または absolute でも可 */
+    top: 0;           /* 上から0px */
+    left: 0;          /* 左端 */
+    right: 0;         /* 横幅を広げる */
+    z-index: 10;      /* 他要素より前面 */
+    background: #f9f9f9; 
+    padding-bottom: 0px;    /* 好きな余白 */
+}
 .flex-between {
 	display: flex;
 	justify-content: space-between;
@@ -513,7 +555,9 @@ button {
 	padding-left: 10px;
 	/* margin-bottom: 0; */
 }
-
+body.dark #sidebar .flex-between {
+    background: black; 
+}
 .longpress-btn {
 	background: #eee;
 	border: 1px solid #ccc;
@@ -568,7 +612,7 @@ body.dark #user-menu {
 }
 
 body.dark #user-menu button {
-	color: #f2f2f7;
+	color: #007fff;
 }
 body.dark #user-menu button:hover {
 	background: #24242e;

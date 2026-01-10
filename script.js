@@ -97,6 +97,26 @@ editor.addEventListener('mousedown', e => {
 });
 
 // 3️⃣UI操作（フォント、ダークモードなど）
+let lastScrollY = window.scrollY;
+const toggleBtn = document.getElementById('sidebar-toggle');
+
+window.addEventListener('scroll', () => {
+  const currentScrollY = window.scrollY;
+
+  if (currentScrollY <= 0) {
+    // ページ最上部 → 必ず表示
+    toggleBtn.classList.remove('hide');
+  } else if (currentScrollY > lastScrollY) {
+    // 下スクロール → 表示
+		 toggleBtn.style.transition = 'transform 0.7s ease, opacity 0.7s ease'; // ゆっくり出現
+    toggleBtn.classList.add('hide');
+  } else if (currentScrollY < lastScrollY) {
+    // 上スクロール → 隠す
+    toggleBtn.classList.remove('hide');
+  }
+
+  lastScrollY = currentScrollY;
+});
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
 // Aa押した時の挙動
 fontBtn.onclick = e => {

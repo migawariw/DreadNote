@@ -33,7 +33,7 @@
 		</button>
 	</section>
 
-	
+
 
 	<section id="view-trash" hidden>
 		<div class="flex-between">
@@ -45,42 +45,43 @@
 		</div>
 		<ul id="trash-list"></ul>
 	</section>
-
+	<button id="sidebar-toggle">＝</button>
 	<section id="view-editor" hidden>
-		<button id="sidebar-toggle">☰</button>
 
-<div id="sidebar" class="hidden">
-		<div class="flex-between">
-			<h2 style="font-size: 32px;">Notes</h2>
-			<div style="display:flex;gap:8px;align-items:center ;">
-				<button id="new-memo-2" style="font-size: 40px; margin-right: 12px; margin-left: 12px; 
-				 font-weight: 200; ">＋</button>
-				<img id="user-icon" src="" title="User Menu">
-				<div id="user-menu">
-					<button id="font-size-btn">Aa</button>
-					<button id="spread-btn">Spread mode</button>
-					<button id="dark-btn">Dark mode</button>
-					<button id="go-trash">Trash</button>
-					<button id="logout-btn">Log out</button>
+
+		<div id="sidebar" class="hidden">
+			<div class="flex-between">
+				<h2 style="font-size: 32px;">　</h2>
+				<div style="display:flex;gap:8px;align-items:center ;">
+					<button id="new-memo-2" style="font-size: 40px; margin-right: 12px; margin-left: 12px; 
+				 font-weight: 200; color: #0071e3;">＋</button>
+					<img id="user-icon" src="" title="User Menu">
+					<div id="user-menu">
+						<button id="font-size-btn">Aa</button>
+						<button id="spread-btn">Spread mode</button>
+						<button id="dark-btn">Dark mode</button>
+						<button id="go-trash">Trash</button>
+						<button id="logout-btn">Log out</button>
+					</div>
+
 				</div>
 
 			</div>
+			<div id="font-size-popup" class="menu-popup">
 
-		</div>
-		<div id="font-size-popup" class="menu-popup">
-			
-			<input type="range" id="font-size-slider" min="12" max="28" value="16">
-			<span id="font-size-value"></span>
+				<input type="range" id="font-size-slider" min="12" max="28" value="16">
+				<span id="font-size-value"></span>
 
-		</div>
-		
-		<ul id="memo-list"></ul>
-		<button id="new-memo" hidden>
-			<div class="logo-title">
-				<img src="../icon/img1.png" class="logo-img" alt="Logo">
 			</div>
-		</button>
-</div>
+
+			<ul id="memo-list"></ul>
+			<div style="height:200px;"></div> <!-- 下に余白 -->
+			<button id="new-memo" hidden>
+				<div class="logo-title">
+					<img src="../icon/img1.png" class="logo-img" alt="Logo">
+				</div>
+			</button>
+		</div>
 		<button id="back" hidden></button>
 		<div id="editor" contenteditable="true"></div>
 	</section>
