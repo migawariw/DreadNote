@@ -26,7 +26,7 @@ const views = { login: document.getElementById( 'view-login' ), list: document.g
 const memoList = document.getElementById( 'memo-list' );
 const trashList = document.getElementById( 'trash-list' );
 const editor = document.getElementById( 'editor' );
-editor.contentEditable = 'false';
+editor.contentEditable = 'true';
 
 const userIcon = document.getElementById( 'user-icon' );
 const userMenu = document.getElementById( 'user-menu' );
