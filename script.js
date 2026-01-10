@@ -982,6 +982,8 @@ editor.addEventListener( 'keydown', e => {
 	const sel = document.getSelection();
 	if ( !sel.rangeCount ) return;
 	const range = sel.getRangeAt( 0 );
+	// 範囲選択なら完全にデフォルトに任せる
+if (!range.collapsed) return;
 
 	// テキストノードなら親をチェック
 	let node = range.startContainer;
