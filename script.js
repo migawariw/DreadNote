@@ -21,7 +21,12 @@ getRedirectResult( auth ).catch( () => { } );
 
 /* 2️⃣DOM要素格納 このブロックはFirebaseへの通信無し*/
 // すなわちHTML内の各要素（ログイン画面、一覧画面、ゴミ箱画面、エディター画面）を変数に格納する
-const views = { login: document.getElementById( 'view-login' ), list: document.getElementById( 'view-list' ), trash: document.getElementById( 'view-trash' ), editor: document.getElementById( 'view-editor' ) };
+const views = {
+  login: document.getElementById('view-login'),
+  list: document.getElementById('view-list') || document.querySelector('#sidebar #view-list'),
+  trash: document.getElementById('view-trash'),
+  editor: document.getElementById('view-editor')
+};
 //メモ一覧、ゴミ箱、エディター、ユーザーアイコン、メニュー等を表示する要素を取得している
 const memoList = document.getElementById( 'memo-list' );
 const trashList = document.getElementById( 'trash-list' );
@@ -39,11 +44,36 @@ const toast = document.getElementById( 'toast' );
 const darkBtn = document.getElementById( 'dark-btn' );
 const spreadBtn = document.getElementById( 'spread-btn' );
 
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+
+sidebarToggle.onclick = async () => {
+  sidebar.classList.toggle('show');
+
+  // サイドバーを開いたらメモ一覧をロード
+
+  if (sidebar.classList.contains('show')) {
+    await loadMetaOnce();   // まず metaCache をロード
+    await loadMemos();      // メモ一覧を描画
+  }
+};
+
 editor.addEventListener( 'blur', () => {
 	setTimeout( () => {
 		editor.contentEditable = 'false';
 	}, 0 );
 } );
+document.addEventListener('click', (e) => {
+  if (sidebar.classList.contains('show') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+    sidebar.classList.remove('show');
+  }
+});
+
+document.addEventListener('touchstart', (e) => {
+  if (sidebar.classList.contains('show') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+    sidebar.classList.remove('show');
+  }
+});
 
 // PC: クリックで編集開始
 editor.addEventListener('mousedown', e => {
@@ -157,7 +187,10 @@ document.addEventListener( 'click', e => {
 
 /* 4️⃣トースト表示（2.000秒間）の関数設定 */
 function showToast( msg, d = 2000 ) { toast.textContent = msg; toast.classList.add( 'show' ); setTimeout( () => toast.classList.remove( 'show' ), d ); }
-function show( view ) { Object.values( views ).forEach( v => v.hidden = true ); views[view].hidden = false; }
+function show(view) {
+  Object.values(views).forEach(v => { if (v) v.hidden = true; });
+  if (views[view]) views[view].hidden = false;
+}
 
 /* 5️⃣6️⃣ 認証処理（Google ログイン / ログアウト） */
 const provider = new GoogleAuthProvider();
@@ -169,24 +202,63 @@ document.getElementById( 'google-login' ).onclick = async () => { try { await si
 
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
 
-onAuthStateChanged( auth, async user => {
-	// ★ ここで「画面を表示していい」と宣言
-	document.body.classList.remove( 'auth-loading' );
-	if ( !user ) {
-		location.hash = '#login';
-		show( 'login' );
-		return;
-	}
+async function openInitialMemo() {
+  await loadMetaOnce();
 
-	if ( user.photoURL ) userIcon.src = user.photoURL;
+  // 未編集メモを探す
+  let unedited = metaCache.memos.find(m => !m.deleted && m.edited === 0);
+  let memoId;
 
-	// ★ 必ずここで遷移処理
-	if ( !location.hash || location.hash === '#login' ) {
-		location.hash = '#/list';
-	}
+  if (unedited) {
+    memoId = unedited.id;
+  } else {
+    // なければ新規作成
+    const ref = await addDoc(
+      collection(db, 'users', auth.currentUser.uid, 'memos'),
+      { title: '', content: '', updated: Date.now(), edited: 0 }
+    );
 
-	await navigate(); // ← 必ず呼ぶ
-} );
+    metaCache.memos.push({
+      id: ref.id,
+      title: '',
+      updated: Date.now(),
+      deleted: false,
+      edited: 0
+    });
+    await saveMeta();
+
+    memoId = ref.id;
+  }
+
+  // 🔒 サイドバーを閉じる
+  sidebar.classList.remove('show');
+
+  location.hash = `#/editor/${memoId}`;
+}
+
+// 認証状態変化時
+onAuthStateChanged(auth, async user => {
+  document.body.classList.remove('auth-loading');
+
+  if (!user) {
+    location.hash = '#login';
+    show('login');
+    return;
+  }
+
+  if (user.photoURL) userIcon.src = user.photoURL;
+
+  // ✅ まず metaCache をロード
+  await loadMetaOnce();
+
+  // ✅ ハッシュが #/editor/xxx ならそのまま開く
+  if (location.hash.startsWith('#/editor/')) {
+    await navigate();
+  } else {
+    // hashが無ければ未編集メモ or 新規作成
+    await openInitialMemo();
+  }
+});
 window.addEventListener( 'hashchange', () => {
 	if ( !auth.currentUser ) return;
 	navigate();
@@ -224,7 +296,8 @@ async function loadMetaOnce() {
 				id: d.id,
 				title: m.title || '',
 				updated: m.updated || Date.now(),
-				deleted: !!m.deletedAt
+				deleted: !!m.deletedAt,
+				edited: m.edited !== undefined ? m.edited : 1  // ← 追加
 			};
 		} );
 
@@ -551,7 +624,7 @@ async function saveMemo() {
 		{ merge: true }
 	);
 
-	await updateMeta( currentMemoId, { title, updated: Date.now() } );
+	await updateMeta( currentMemoId, { title, updated: Date.now(), edited: 1 } );
 }
 
 async function saveMeta() {
@@ -1034,7 +1107,10 @@ if (!range.collapsed) return;
 } );
 
 /* 9️⃣ ナビゲーション・新規作成ボタン*/
-document.getElementById( 'go-trash' ).onclick = () => { location.hash = '#/trash'; }
+document.getElementById('go-trash').onclick = e => {
+	e.preventDefault();
+  window.open('https://migawariw.github.io/DreadNote6/DreadNote/icon1/index.html#/trash', '_blank');
+};
 document.getElementById( 'back-list' ).onclick = () => { location.hash = '#/list'; }
 document.getElementById( 'back' ).onclick = () => { if ( history.length > 1 ) history.back(); else location.hash = '#/list'; }
 /* New memo button */
@@ -1059,60 +1135,49 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 		doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
 		metaCache
 	);
+		// 🔒 サイドバーを閉じる
+	sidebar.classList.remove('show');
 
 	// エディタへ
 	location.hash = `#/editor/${ref.id}`;
 };
 document.getElementById( 'new-memo-2' ).onclick =
 	document.getElementById( 'new-memo' ).onclick;
-/* Navigation */
+/* navigate() を hash に依存しない、安全版に変更 */
 async function navigate() {
-	if ( !auth.currentUser ) {
-		show( 'login' );
-		return;
-	}
+  if (!auth.currentUser) return show('login');
 
-	const hash = location.hash;
+  await loadMetaOnce(); // ← 必ず metaCache をロード
 
-	if ( hash.startsWith( '#/editor/' ) ) {
-		await loadMetaOnce();           // editor だけ
-		const id = hash.split( '/' )[2];
-		if ( id ) await openEditor( id );
+  const hash = location.hash;
 
-	} else if ( hash === '#/trash' ) {
-		await loadMetaOnce();           // trash だけ
-		show( 'trash' );
-		loadTrash();
+  if (hash.startsWith('#/editor/')) {
+    const id = hash.split('/')[2];
+    if (!id) return;
 
-		// ★ Empty Trash ボタンの設定 ★
-		const emptyTrashBtn = document.getElementById( 'empty-trash-btn' );
-		if ( emptyTrashBtn ) {
-			emptyTrashBtn.onclick = async () => {
-				if ( !metaCache || !Array.isArray( metaCache.memos ) ) return;
+    const meta = getMeta(id);
+    if (!meta) {
+      // Firestoreにまだ存在するか確認
+      const snap = await getDoc(doc(db, 'users', auth.currentUser.uid, 'memos', id));
+      if (!snap.exists()) {
+        showToast('メモが存在しません');
+        location.hash = '#/list';
+        return;
+      }
+      // metaCache に追加
+      const data = snap.data();
+      metaCache.memos.push({
+        id,
+        title: data.title || '',
+        updated: data.updated || Date.now(),
+        deleted: !!data.deleted,
+        edited: data.edited !== undefined ? data.edited : 1
+      });
+      await saveMeta();
+    }
 
-				// ★ 確認ダイアログ ★
-				const ok = confirm( "Trash内のすべてのメモを完全削除します。本当によろしいですか？" );
-				if ( !ok ) return; // キャンセルなら何もしない
-
-				const trashMemos = metaCache.memos.filter( m => m.deleted );
-				for ( const m of trashMemos ) {
-					// 完全削除
-					await deleteDoc( doc( db, 'users', auth.currentUser.uid, 'memos', m.id ) );
-				}
-
-
-				// meta からも削除
-				metaCache.memos = metaCache.memos.filter( m => !m.deleted );
-				await saveMeta();
-
-				loadTrash();
-				showToast( 'Trash emptied' );
-			};
-		}
-
-	} else {
-		await loadMetaOnce();           // list だけ
-		show( 'list' );
-		await loadMemos();
-	}
+    await openEditor(id);
+		  // 🔒 サイドバーを閉じる
+  sidebar.classList.remove('show');
+  }
 }

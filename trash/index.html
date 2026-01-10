@@ -1,4 +1,41 @@
-body {
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trash - Dreadnote</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+  }
+  header {
+    background: #333;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+  }
+  #trash-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem;
+  }
+  #trash-list li {
+    background: white;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  #trash-list li button {
+    margin-left: 0.5rem;
+  }
+  body {
 	margin: 0;
 	padding: 20px 20px 300px 20px;
 	font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -629,3 +666,81 @@ body.dark .menu-popup button:hover {
 
 
 
+
+</style>
+</head>
+<body>
+		<div class="flex-between">
+			<h2>Trash</h2>
+			<div style="display:flex;gap:8px;align-items:center;">
+				<button id="empty-trash-btn">Empty Trash</button>
+			</div>
+		</div>
+		<ul id="trash-list"></ul>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDocs, collection, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdDf0GH80PoGlcbk2yjlaVQfP01Gk9m18",
+      authDomain: "noteeditor-ba1db.firebaseapp.com",
+      projectId: "noteeditor-ba1db"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const trashListEl = document.getElementById('trash-list');
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        alert('ログインしてください');
+        window.close();
+        return;
+      }
+
+      const metaRef = doc(db, 'users', user.uid, 'meta', 'main');
+      const snap = await getDoc(metaRef);
+      let memos = [];
+      if (snap.exists()) {
+        memos = snap.data().memos || [];
+      }
+
+      // 削除済みだけ抽出
+      memos.filter(m => m.deleted).forEach(m => {
+        const li = document.createElement('li');
+        li.textContent = m.title || '(無題)';
+
+        // 復元ボタン
+        const restoreBtn = document.createElement('button');
+        restoreBtn.textContent = '↩️';
+        restoreBtn.onclick = async () => {
+          m.deleted = false;
+          m.updated = Date.now();
+          await setDoc(metaRef, { memos }, { merge: true });
+          li.remove();
+        };
+
+        // 完全削除ボタン
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = async () => {
+          // Firestore本体削除
+          await deleteDoc(doc(db, 'users', user.uid, 'memos', m.id));
+          // metaからも削除
+          const newMemos = memos.filter(mm => mm.id !== m.id);
+          await setDoc(metaRef, { memos: newMemos }, { merge: true });
+          li.remove();
+        };
+
+        li.appendChild(restoreBtn);
+        li.appendChild(deleteBtn);
+
+        trashListEl.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
