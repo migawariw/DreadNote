@@ -1007,8 +1007,8 @@ if (!range.collapsed) return;
 	editor.focus();
 
 	// 改行追加（range 選択後に置く）
-	const br = document.createElement( 'br' );
-	urlText.after( br );
+	// const br = document.createElement( 'br' );
+	// urlText.after( br );
 
 	editor.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 } );
