@@ -309,7 +309,7 @@ async function openNewMemo() {
     const emptyData = { content: '', title: '' };
     await showEditor(emptyData);
 
-    editor.innerHTML = '';
+    editor.innerHTML = '<div><br></div>';
     editor.contentEditable = 'true';
     editor.focus();
 }
@@ -691,7 +691,7 @@ async function showEditor( data = { content: '', title: '' } ) {
 	// 改行を <div> に変換してセット
 	editor.innerHTML = content
 		.split( '\n' )
-		.map( line => line || '' )  // 空行も div に変換
+		.map( line => line || '<div><br></div>' )  // 空行も br に変換
 		.join( '' );
 	editor.style.fontSize = savedSize + 'px';
 
