@@ -364,8 +364,8 @@ async function flushSave() {
 
 
             // metaCache からも削除
-            metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
-            delete memoCache[currentMemoId];
+            // metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
+            // delete memoCache[currentMemoId];
 
             await saveMeta();
 
