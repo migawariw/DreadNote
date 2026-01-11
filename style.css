@@ -485,7 +485,10 @@ body.dark .menu-btn:hover,
 .menu-popup button:hover {
 	background: #eee;
 }
-
+.pin-input {
+    width: 400px!important;/* デフォルトより広く */
+    min-width: 800px;
+}
 #user-icon {
 	/* position: absolute; */
 	/* position: fixed; */

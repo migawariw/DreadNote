@@ -64,8 +64,8 @@ function closeSidebar() {
 
 // サイドバー閉じるボタン
 sidebarToggle2.onclick = async () => {
-    await flushSave();
-    closeSidebar();
+	await flushSave();
+	closeSidebar();
 };
 
 editor.addEventListener( 'blur', () => {
@@ -281,7 +281,7 @@ onAuthStateChanged( auth, async user => {
 	// ✅ まず metaCache をロード
 	await loadMetaOnce();
 	// await fixSizesOnce();
-	fixSizesOnce().then(() => console.log('Sizes fixed in background'));
+	fixSizesOnce().then( () => console.log( 'Sizes fixed in background' ) );
 
 	// ✅ ハッシュが #/editor/xxx ならそのまま開く
 	if ( location.hash.startsWith( '#/editor/' ) ) {
@@ -302,79 +302,79 @@ let isNewMemo = false;
 let saveTimer = null;
 // サイドバーで新規メモを作る
 async function openNewMemo() {
-    isNewMemo = true;
-    currentMemoId = null;
-    location.hash = '#/editor/new';
+	isNewMemo = true;
+	currentMemoId = null;
+	location.hash = '#/editor/new';
 
-    const emptyData = { content: '', title: '' };
-    await showEditor(emptyData);
+	const emptyData = { content: '', title: '' };
+	await showEditor( emptyData );
 
-    editor.innerHTML = '<div><br></div>';
-    editor.contentEditable = 'true';
-    editor.focus();
+	editor.innerHTML = '<div><br></div>';
+	editor.contentEditable = 'true';
+	editor.focus();
 }
 
 // サイドバーから既存メモを開く
-async function openMemo(id) {
-    await flushSave(); // まず前のメモを保存／削除
-    currentMemoId = id;
-    isNewMemo = false;
-    location.hash = `#/editor/${id}`;
-    showEditor();
-    editor.innerHTML = memoCache[id]?.content || '<div><br></div>';
-    editor.focus();
+async function openMemo( id ) {
+	await flushSave(); // まず前のメモを保存／削除
+	currentMemoId = id;
+	isNewMemo = false;
+	location.hash = `#/editor/${id}`;
+	showEditor();
+	editor.innerHTML = memoCache[id]?.content || '<div><br></div>';
+	editor.focus();
 }
 
 // エディターで入力開始
 let creatingNewMemo = false;
 
-editor.addEventListener('input', async () => {
-    if (isNewMemo && !currentMemoId && !creatingNewMemo) {
-        creatingNewMemo = true;
-        try {
-            const ref = await addDoc(collection(db, 'users', auth.currentUser.uid, 'memos'), {
-                title: '',
-                content: '',
-                updated: Date.now(),
-                edited: 0,
-                size: 0,
-            });
-            currentMemoId = ref.id;
-            metaCache.memos.push({ id: currentMemoId, title: '', updated: Date.now(), deleted: false });
-            await saveMeta();
-            isNewMemo = false;
-        } finally {
-            creatingNewMemo = false;
-        }
-    }
-    debounceSave();
-});
+editor.addEventListener( 'input', async () => {
+	if ( isNewMemo && !currentMemoId && !creatingNewMemo ) {
+		creatingNewMemo = true;
+		try {
+			const ref = await addDoc( collection( db, 'users', auth.currentUser.uid, 'memos' ), {
+				title: '',
+				content: '',
+				updated: Date.now(),
+				edited: 0,
+				size: 0,
+			} );
+			currentMemoId = ref.id;
+			metaCache.memos.push( { id: currentMemoId, title: '', updated: Date.now(), deleted: false } );
+			await saveMeta();
+			isNewMemo = false;
+		} finally {
+			creatingNewMemo = false;
+		}
+	}
+	debounceSave();
+} );
 
 async function flushSave() {
-    if (saveTimer) {
-        clearTimeout(saveTimer);
-        saveTimer = null;
-        await saveMemo();
+	if ( saveTimer ) {
+		clearTimeout( saveTimer );
+		saveTimer = null;
+		await saveMemo();
 
-        // 🔹 内容が空のメモは削除
-        if (currentMemoId && (!editor.innerText.trim() || editor.innerHTML === '')) {
-            // Firestoreから削除
-            // await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
-						await updateMeta(currentMemoId, { deleted: true, updated: Date.now() });
+		// 🔹 内容が空のメモは削除
+		if ( currentMemoId && ( !editor.innerText.trim() || editor.innerHTML === '' ) ) {
+			// Firestoreから削除
+			// await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
+			await updateMeta( currentMemoId, { deleted: true, updated: Date.now() } );
 
 
-            // metaCache からも削除
-            // metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
-            // delete memoCache[currentMemoId];
+			// metaCache からも削除←これするとdeleteDocと同じことになる
+			// metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
+			// delete memoCache[currentMemoId];
 
-            await saveMeta();
+			await saveMeta();
 
-            // editorリセット
-            currentMemoId = null;
-            isNewMemo = true;
-            editor.innerHTML = '';
-        }
-    }
+			// editorリセット
+			currentMemoId = null;
+			isNewMemo = true;
+			editor.innerHTML = '';
+		}
+	}
 }
 function renderTotalSize() {
 	const el = document.getElementById( 'total-size' );
@@ -443,6 +443,15 @@ async function loadMetaOnce() {
 			m.size = 0;
 			metaWasFixed = true;
 		}
+		// 🔹 ここに追加
+		if ( typeof m.pinned !== 'boolean' ) {
+			m.pinned = false;
+			metaWasFixed = true;
+		}
+		if ( !m.pinnedDate ) {
+			m.pinnedDate = null;
+			metaWasFixed = true;
+		}
 	} );
 
 	// ✅ 「直した時だけ」保存
@@ -472,9 +481,9 @@ async function loadMemos() {
 			const li = document.createElement( 'li' );
 			li.style.fontSize = savedSize + 'px'; // ← 一覧に反映
 			// 🔹 現在開いているメモに active クラス
-            if (m.id === currentMemoId) {
-                li.classList.add('active');
-            }
+			if ( m.id === currentMemoId ) {
+				li.classList.add( 'active' );
+			}
 
 			/* ========== li 全体を覆う a ========== */
 			const link = document.createElement( 'a' );
@@ -490,11 +499,11 @@ async function loadMemos() {
 			link.onclick = e => {
 				e.preventDefault();
 				// location.hash が既に同じIDなら手動で閉じる
-	if (location.hash === `#/editor/${m.id}`) {
-		sidebar.classList.remove('show'); // サイドバーを閉じる
-		
-		return; // navigate() は呼ばなくてOK
-	}
+				if ( location.hash === `#/editor/${m.id}` ) {
+					sidebar.classList.remove( 'show' ); // サイドバーを閉じる
+
+					return; // navigate() は呼ばなくてOK
+				}
 
 				location.hash = `#/editor/${m.id}`;
 			};
@@ -522,11 +531,23 @@ async function loadMemos() {
 
 			const dateSpan = document.createElement( 'span' );
 			dateSpan.className = 'date-span';
-			dateSpan.textContent =
-				new Date( m.updated ).toLocaleString( 'ja-JP', {
-					year: 'numeric', month: '2-digit', day: '2-digit',
-					hour: '2-digit', minute: '2-digit'
-				} );
+			// dateSpan.textContent =
+			// 	new Date( m.updated ).toLocaleString( 'ja-JP', {
+			// 		year: 'numeric', month: '2-digit', day: '2-digit',
+			// 		hour: '2-digit', minute: '2-digit'
+			// 	} );
+			const displayDate = m.pinned ? m.pinnedDate : m.updated;
+			dateSpan.textContent = new Date( displayDate ).toLocaleString( 'ja-JP', {
+				year: 'numeric', month: '2-digit', day: '2-digit',
+				hour: '2-digit', minute: '2-digit'
+			} );
+			// 🔹 pinned ならマークを追加
+			if ( m.pinned ) {
+				const pin = document.createElement( 'span' );
+				pin.textContent = '🕰️';
+				pin.style.marginLeft = '4px';
+				dateSpan.appendChild( pin );
+			}
 
 			/* ⋯ メニュー */
 			const menuBtn = document.createElement( 'button' );
@@ -535,6 +556,111 @@ async function loadMemos() {
 
 			const menuPopup = document.createElement( 'div' );
 			menuPopup.className = 'menu-popup';
+			// 例えば右側の div を親にする場合
+			rightDiv.style.position = 'relative'; // 親に relative を付与
+
+
+			// 📌 ピンボタン
+			const pinBtn = document.createElement( 'button' );
+			pinBtn.textContent = m.pinned ? '📌' : '📍';
+			pinBtn.className = 'menu-btn';
+			rightDiv.appendChild( pinBtn );
+
+			// 日付入力欄とOK/キャンセルボタン（初期非表示）
+			const pinInput = document.createElement( 'input' );
+			pinInput.type = 'text';
+			pinInput.style.display = 'none';
+			pinInput.style.position = 'absolute';
+			pinInput.style.zIndex = '10';
+			pinInput.style.width = '200px';
+			pinInput.style.padding = '20px 8px';
+			pinInput.style.fontSize = '16px';
+
+			const pinOkBtn = document.createElement( 'button' );
+			pinOkBtn.textContent = 'OK';
+			pinOkBtn.style.display = 'none';
+			pinOkBtn.style.position = 'absolute';
+			pinOkBtn.style.zIndex = '10';
+			pinOkBtn.style.marginLeft = '4px';
+
+			const pinCancelBtn = document.createElement( 'button' );
+			pinCancelBtn.textContent = 'キャンセル';
+			pinCancelBtn.style.display = 'none';
+			pinCancelBtn.style.position = 'absolute';
+			pinCancelBtn.style.zIndex = '10';
+			pinCancelBtn.style.marginLeft = '4px';
+
+			// 親要素に追加
+			rightDiv.appendChild( pinInput );
+			rightDiv.appendChild( pinOkBtn );
+			rightDiv.appendChild( pinCancelBtn );
+
+			// 初期値設定（既存のコードはそのまま）
+			pinInput.value = new Date( displayDate ).toLocaleString( 'ja-JP', {
+				year: 'numeric', month: '2-digit', day: '2-digit',
+				hour: '2-digit', minute: '2-digit'
+			} );
+			// ピンボタンクリック
+			pinBtn.onclick = ( e ) => {
+				e.stopPropagation();
+				menuPopup.style.display = 'none';
+
+				const rect = pinBtn.getBoundingClientRect();
+				const parentRect = rightDiv.getBoundingClientRect();
+
+				// 親要素相対の座標に変換
+				const top = rect.top - parentRect.top;
+				const left = rect.left - parentRect.left;
+
+				// pinInput.style.top = top + 'px';
+				// pinInput.style.left = left - 120 + 'px';
+
+				pinOkBtn.style.top = top + 200 + 'px';
+				pinOkBtn.style.left = left + 60 + 'px';
+
+				pinCancelBtn.style.top = top + 200 + 'px';
+				pinCancelBtn.style.left = left +120+ 'px';
+
+				const show = pinInput.style.display === 'none';
+				pinInput.style.display = show ? 'inline-block' : 'none';
+				pinOkBtn.style.display = show ? 'inline-block' : 'none';
+				pinCancelBtn.style.display = show ? 'inline-block' : 'none';
+
+				if ( show ) pinInput.focus();
+			};
+
+
+			// OK / キャンセルのクリック処理は同じ
+			pinInput.onclick = pinInput.onfocus = ( e ) => e.stopPropagation();
+			pinOkBtn.onclick = async ( e ) => {
+				e.stopPropagation();
+				const value = pinInput.value.trim();
+				const parsed = new Date( value.replace( /-/g, '/' ) );
+				const newTime = parsed.getTime();
+
+				if ( isNaN( newTime ) ) {
+					alert( '無効な日時です' );
+					return;
+				}
+
+				m.pinned = true;
+				m.pinnedDate = newTime;
+				pinBtn.textContent = '📌';
+
+				await saveMeta();
+				loadMemos();
+
+				pinInput.style.display = 'none';
+				pinOkBtn.style.display = 'none';
+				pinCancelBtn.style.display = 'none';
+			};
+
+			pinCancelBtn.onclick = ( e ) => {
+				e.stopPropagation();
+				pinInput.style.display = 'none';
+				pinOkBtn.style.display = 'none';
+				pinCancelBtn.style.display = 'none';
+			};
 
 			const copyBtn = document.createElement( 'button' );
 			copyBtn.textContent = '❐';
@@ -560,7 +686,7 @@ async function loadMemos() {
 				menuPopup.style.display = 'none';
 			};
 
-			menuPopup.append( copyBtn, delBtn );
+			menuPopup.append( pinBtn, copyBtn, delBtn );
 			menuBtn.onclick = e => {
 				e.stopPropagation();
 				menuPopup.style.display =
@@ -789,19 +915,19 @@ async function updateMeta( id, fields ) {
 }
 async function fixSizesOnce() {
 	let fixed = false;
-    const memosToCheck = metaCache.memos.filter(m => !m.size || m.size <= 0);
-    if (memosToCheck.length === 0) return;
+	const memosToCheck = metaCache.memos.filter( m => !m.size || m.size <= 0 );
+	if ( memosToCheck.length === 0 ) return;
 
-    // Firestore getDocs でまとめて取得
-    const memoRefs = memosToCheck.map(m => doc(db, 'users', auth.currentUser.uid, 'memos', m.id));
-    const snaps = await Promise.all(memoRefs.map(ref => getDoc(ref)));
+	// Firestore getDocs でまとめて取得
+	const memoRefs = memosToCheck.map( m => doc( db, 'users', auth.currentUser.uid, 'memos', m.id ) );
+	const snaps = await Promise.all( memoRefs.map( ref => getDoc( ref ) ) );
 
-    snaps.forEach((snap, i) => {
-        if (!snap.exists()) return;
-        const content = snap.data().content || '';
-        memosToCheck[i].size = new Blob([content]).size;
-        fixed = true;
-    });
+	snaps.forEach( ( snap, i ) => {
+		if ( !snap.exists() ) return;
+		const content = snap.data().content || '';
+		memosToCheck[i].size = new Blob( [content] ).size;
+		fixed = true;
+	} );
 
 	if ( fixed ) {
 		metaCache.totalSize = metaCache.memos.reduce(
@@ -1002,35 +1128,35 @@ editor.addEventListener( 'paste', async e => {
 			const MAX_BLOB_BYTES = MAX_BYTES / BASE64_EXPAND;
 
 			let quality = 0.8;
-let scale = 1.0;
-let loopCount = 0;
+			let scale = 1.0;
+			let loopCount = 0;
 
-// 元のキャンバスサイズを保持
-const originalWidth = canvas.width;
-const originalHeight = canvas.height;
+			// 元のキャンバスサイズを保持
+			const originalWidth = canvas.width;
+			const originalHeight = canvas.height;
 
-let safeBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+			let safeBlob = await new Promise( resolve => canvas.toBlob( resolve, 'image/jpeg', quality ) );
 
-while (safeBlob.size > MAX_BLOB_BYTES && (quality > 0.1 || scale > 0.1)) {
-    loopCount++;
+			while ( safeBlob.size > MAX_BLOB_BYTES && ( quality > 0.1 || scale > 0.1 ) ) {
+				loopCount++;
 
-    if (quality > 0.1) {
-        quality -= 0.05;
-        // 元のキャンバスで再圧縮
-        safeBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-    } else {
-        // scaleを下げて新しい一時キャンバスを作る
-        scale *= 0.9;
-        const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width = Math.floor(originalWidth * scale);
-        tmpCanvas.height = Math.floor(originalHeight * scale);
-        const ctx = tmpCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+				if ( quality > 0.1 ) {
+					quality -= 0.05;
+					// 元のキャンバスで再圧縮
+					safeBlob = await new Promise( resolve => canvas.toBlob( resolve, 'image/jpeg', quality ) );
+				} else {
+					// scaleを下げて新しい一時キャンバスを作る
+					scale *= 0.9;
+					const tmpCanvas = document.createElement( 'canvas' );
+					tmpCanvas.width = Math.floor( originalWidth * scale );
+					tmpCanvas.height = Math.floor( originalHeight * scale );
+					const ctx = tmpCanvas.getContext( '2d' );
+					ctx.drawImage( canvas, 0, 0, tmpCanvas.width, tmpCanvas.height );
 
-        // tmpCanvas で再圧縮
-        safeBlob = await new Promise(resolve => tmpCanvas.toBlob(resolve, 'image/jpeg', quality));
-    }
-}
+					// tmpCanvas で再圧縮
+					safeBlob = await new Promise( resolve => tmpCanvas.toBlob( resolve, 'image/jpeg', quality ) );
+				}
+			}
 
 			// ========================
 			// Firestore保存 + showToastで容量とループ回数表示
@@ -1339,8 +1465,8 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 };
 document.getElementById( 'new-memo-2' ).onclick =
 	document.getElementById( 'new-memo' ).onclick;
-	window.addEventListener('hashchange', async () => { await flushSave(); });
-window.addEventListener('beforeunload', async (e) => { await flushSave(); });
+window.addEventListener( 'hashchange', async () => { await flushSave(); } );
+window.addEventListener( 'beforeunload', async ( e ) => { await flushSave(); } );
 /* navigate() を hash に依存しない、安全版に変更 */
 async function navigate() {
 	if ( !auth.currentUser ) return show( 'login' );
@@ -1352,21 +1478,21 @@ async function navigate() {
 	if ( hash.startsWith( '#/editor/' ) ) {
 		const id = hash.split( '/' )[2];
 		if ( !id ) return;
-		if (id === 'new') {
-           await openNewMemo(); // 新規メモを作成
-           return;
-       }
+		if ( id === 'new' ) {
+			await openNewMemo(); // 新規メモを作成
+			return;
+		}
 
 
 		const meta = getMeta( id );
 		if ( !meta ) {
-            // Firestoreにまだ存在するか確認
-            const snap = await getDoc(doc(db, 'users', auth.currentUser.uid, 'memos', id));
-            if (!snap.exists()) {
-                showToast('メモが存在しません');
-                sidebar.classList.add('show'); // 一覧表示
-                return;
-            }
+			// Firestoreにまだ存在するか確認
+			const snap = await getDoc( doc( db, 'users', auth.currentUser.uid, 'memos', id ) );
+			if ( !snap.exists() ) {
+				showToast( 'メモが存在しません' );
+				sidebar.classList.add( 'show' ); // 一覧表示
+				return;
+			}
 			// metaCache に追加
 			const data = snap.data();
 			metaCache.memos.push( {
