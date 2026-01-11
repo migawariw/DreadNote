@@ -321,25 +321,31 @@ async function openMemo(id) {
     isNewMemo = false;
     location.hash = `#/editor/${id}`;
     showEditor();
-    editor.innerHTML = memoCache[id]?.content || '';
+    editor.innerHTML = memoCache[id]?.content || '<div><br></div>';
     editor.focus();
 }
 
 // エディターで入力開始
+let creatingNewMemo = false;
+
 editor.addEventListener('input', async () => {
-    if (isNewMemo && !currentMemoId) {
-        // 新規メモを作成
-        const ref = await addDoc(collection(db, 'users', auth.currentUser.uid, 'memos'), {
-            title: '',
-            content: '',
-            updated: Date.now(),
-            edited: 0,
-						size: 0,
-        });
-        currentMemoId = ref.id;
-        metaCache.memos.push({ id: currentMemoId, title: '', updated: Date.now(), deleted: false });
-        await saveMeta();
-        isNewMemo = false;
+    if (isNewMemo && !currentMemoId && !creatingNewMemo) {
+        creatingNewMemo = true;
+        try {
+            const ref = await addDoc(collection(db, 'users', auth.currentUser.uid, 'memos'), {
+                title: '',
+                content: '',
+                updated: Date.now(),
+                edited: 0,
+                size: 0,
+            });
+            currentMemoId = ref.id;
+            metaCache.memos.push({ id: currentMemoId, title: '', updated: Date.now(), deleted: false });
+            await saveMeta();
+            isNewMemo = false;
+        } finally {
+            creatingNewMemo = false;
+        }
     }
     debounceSave();
 });
