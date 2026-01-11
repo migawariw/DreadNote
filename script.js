@@ -359,7 +359,9 @@ async function flushSave() {
         // 🔹 内容が空のメモは削除
         if (currentMemoId && (!editor.innerText.trim() || editor.innerHTML === '')) {
             // Firestoreから削除
-            await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
+            // await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
+						await updateMeta(currentMemoId, { deleted: true, updated: Date.now() });
+
 
             // metaCache からも削除
             metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
