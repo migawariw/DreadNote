@@ -22,10 +22,10 @@ getRedirectResult( auth ).catch( () => { } );
 /* 2️⃣DOM要素格納 このブロックはFirebaseへの通信無し*/
 // すなわちHTML内の各要素（ログイン画面、一覧画面、ゴミ箱画面、エディター画面）を変数に格納する
 const views = {
-  login: document.getElementById('view-login'),
-  list: document.getElementById('view-list') || document.querySelector('#sidebar #view-list'),
-  trash: document.getElementById('view-trash'),
-  editor: document.getElementById('view-editor')
+	login: document.getElementById( 'view-login' ),
+	list: document.getElementById( 'view-list' ) || document.querySelector( '#sidebar #view-list' ),
+	trash: document.getElementById( 'view-trash' ),
+	editor: document.getElementById( 'view-editor' )
 };
 //メモ一覧、ゴミ箱、エディター、ユーザーアイコン、メニュー等を表示する要素を取得している
 const memoList = document.getElementById( 'memo-list' );
@@ -44,22 +44,22 @@ const toast = document.getElementById( 'toast' );
 const darkBtn = document.getElementById( 'dark-btn' );
 const spreadBtn = document.getElementById( 'spread-btn' );
 
-const sidebar = document.getElementById('sidebar');
-const sidebarToggle = document.getElementById('sidebar-toggle');
-const sidebarToggle2 = document.getElementById('sidebar-toggle2');
+const sidebar = document.getElementById( 'sidebar' );
+const sidebarToggle = document.getElementById( 'sidebar-toggle' );
+const sidebarToggle2 = document.getElementById( 'sidebar-toggle2' );
 
 sidebarToggle.onclick = async () => {
-  sidebar.classList.toggle('show');
+	sidebar.classList.toggle( 'show' );
 
-  // サイドバーを開いたらメモ一覧をロード
+	// サイドバーを開いたらメモ一覧をロード
 
-  if (sidebar.classList.contains('show')) {
-    await loadMetaOnce();   // まず metaCache をロード
-    await loadMemos();      // メモ一覧を描画
-  }
+	if ( sidebar.classList.contains( 'show' ) ) {
+		await loadMetaOnce();   // まず metaCache をロード
+		await loadMemos();      // メモ一覧を描画
+	}
 };
 function closeSidebar() {
-  sidebar.classList.remove('show');
+	sidebar.classList.remove( 'show' );
 }
 
 sidebarToggle2.onclick = closeSidebar;
@@ -69,60 +69,60 @@ editor.addEventListener( 'blur', () => {
 		editor.contentEditable = 'false';
 	}, 0 );
 } );
-document.addEventListener('click', (e) => {
-  if (sidebar.classList.contains('show') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
-    sidebar.classList.remove('show');
-  }
-});
+document.addEventListener( 'click', ( e ) => {
+	if ( sidebar.classList.contains( 'show' ) && !sidebar.contains( e.target ) && e.target !== sidebarToggle ) {
+		sidebar.classList.remove( 'show' );
+	}
+} );
 
-document.addEventListener('touchstart', (e) => {
-  if (sidebar.classList.contains('show') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
-    sidebar.classList.remove('show');
-  }
-});
+document.addEventListener( 'touchstart', ( e ) => {
+	if ( sidebar.classList.contains( 'show' ) && !sidebar.contains( e.target ) && e.target !== sidebarToggle ) {
+		sidebar.classList.remove( 'show' );
+	}
+} );
 
 // PC: クリックで編集開始
-editor.addEventListener('mousedown', e => {
+editor.addEventListener( 'mousedown', e => {
 	// 長押しやリンククリックは除外
-	if (e.target.closest('a') || e.target.closest('img') || e.target.closest('iframe')) return;
+	if ( e.target.closest( 'a' ) || e.target.closest( 'img' ) || e.target.closest( 'iframe' ) ) return;
 
-	if (editor.contentEditable === 'false') {
+	if ( editor.contentEditable === 'false' ) {
 		editor.contentEditable = 'true';
 
 		const x = e.clientX;
 		const y = e.clientY;
-		const range = document.caretRangeFromPoint(x, y);
-		if (range) {
+		const range = document.caretRangeFromPoint( x, y );
+		if ( range ) {
 			const sel = window.getSelection();
 			sel.removeAllRanges();
-			sel.addRange(range);
+			sel.addRange( range );
 		}
 
-		editor.focus({ preventScroll: true });
+		editor.focus( { preventScroll: true } );
 	}
-});
+} );
 
 // 3️⃣UI操作（フォント、ダークモードなど）
 let lastScrollY = window.scrollY;
-const toggleBtn = document.getElementById('sidebar-toggle');
+const toggleBtn = document.getElementById( 'sidebar-toggle' );
 
-window.addEventListener('scroll', () => {
-  const currentScrollY = window.scrollY;
+window.addEventListener( 'scroll', () => {
+	const currentScrollY = window.scrollY;
 
-  if (currentScrollY <= 0) {
-    // ページ最上部 → 必ず表示
-    toggleBtn.classList.remove('hide');
-  } else if (currentScrollY > lastScrollY) {
-    // 下スクロール → 表示
-		 toggleBtn.style.transition = 'transform 0.7s ease, opacity 0.7s ease'; // ゆっくり出現
-    toggleBtn.classList.add('hide');
-  } else if (currentScrollY < lastScrollY) {
-    // 上スクロール → 隠す
-    toggleBtn.classList.remove('hide');
-  }
+	if ( currentScrollY <= 0 ) {
+		// ページ最上部 → 必ず表示
+		toggleBtn.classList.remove( 'hide' );
+	} else if ( currentScrollY > lastScrollY ) {
+		// 下スクロール → 表示
+		toggleBtn.style.transition = 'transform 0.7s ease, opacity 0.7s ease'; // ゆっくり出現
+		toggleBtn.classList.add( 'hide' );
+	} else if ( currentScrollY < lastScrollY ) {
+		// 上スクロール → 隠す
+		toggleBtn.classList.remove( 'hide' );
+	}
 
-  lastScrollY = currentScrollY;
-});
+	lastScrollY = currentScrollY;
+} );
 userIcon.onclick = () => { userMenu.style.display = ( userMenu.style.display === 'block' ) ? 'none' : 'block'; }
 // Aa押した時の挙動
 fontBtn.onclick = e => {
@@ -213,9 +213,9 @@ document.addEventListener( 'click', e => {
 
 /* 4️⃣トースト表示（2.000秒間）の関数設定 */
 function showToast( msg, d = 2000 ) { toast.textContent = msg; toast.classList.add( 'show' ); setTimeout( () => toast.classList.remove( 'show' ), d ); }
-function show(view) {
-  Object.values(views).forEach(v => { if (v) v.hidden = true; });
-  if (views[view]) views[view].hidden = false;
+function show( view ) {
+	Object.values( views ).forEach( v => { if ( v ) v.hidden = true; } );
+	if ( views[view] ) views[view].hidden = false;
 }
 
 /* 5️⃣6️⃣ 認証処理（Google ログイン / ログアウト） */
@@ -229,68 +229,86 @@ document.getElementById( 'google-login' ).onclick = async () => { try { await si
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
 
 async function openInitialMemo() {
-  await loadMetaOnce();
+	await loadMetaOnce();
 
-  // 未編集メモを探す
-  let unedited = metaCache.memos.find(m => !m.deleted && m.edited === 0);
-  let memoId;
+	// 未編集メモを探す
+	let unedited = metaCache.memos.find( m => !m.deleted && m.edited === 0 );
+	let memoId;
 
-  if (unedited) {
-    memoId = unedited.id;
-  } else {
-    // なければ新規作成
-    const ref = await addDoc(
-      collection(db, 'users', auth.currentUser.uid, 'memos'),
-      { title: '', content: '', updated: Date.now(), edited: 0 }
-    );
+	if ( unedited ) {
+		memoId = unedited.id;
+	} else {
+		// なければ新規作成
+		const ref = await addDoc(
+			collection( db, 'users', auth.currentUser.uid, 'memos' ),
+			{ title: '', content: '', updated: Date.now(), edited: 0 }
+		);
 
-    metaCache.memos.push({
-      id: ref.id,
-      title: '',
-      updated: Date.now(),
-      deleted: false,
-      edited: 0
-    });
-    await saveMeta();
+		metaCache.memos.push( {
+			id: ref.id,
+			title: '',
+			updated: Date.now(),
+			deleted: false,
+			edited: 0
+		} );
+		await saveMeta();
 
-    memoId = ref.id;
-  }
+		memoId = ref.id;
+	}
 
-  // 🔒 サイドバーを閉じる
-  sidebar.classList.remove('show');
+	// 🔒 サイドバーを閉じる
+	sidebar.classList.remove( 'show' );
 
-  location.hash = `#/editor/${memoId}`;
+	location.hash = `#/editor/${memoId}`;
 }
 
 // 認証状態変化時
-onAuthStateChanged(auth, async user => {
-  document.body.classList.remove('auth-loading');
+onAuthStateChanged( auth, async user => {
+	document.body.classList.remove( 'auth-loading' );
 
-  if (!user) {
-    location.hash = '#login';
-    show('login');
-    return;
-  }
+	if ( !user ) {
+		location.hash = '#login';
+		show( 'login' );
+		return;
+	}
 
-  if (user.photoURL) userIcon.src = user.photoURL;
+	if ( user.photoURL ) userIcon.src = user.photoURL;
 
-  // ✅ まず metaCache をロード
-  await loadMetaOnce();
+	// ✅ まず metaCache をロード
+	await loadMetaOnce();
+	await fixSizesOnce();
 
-  // ✅ ハッシュが #/editor/xxx ならそのまま開く
-  if (location.hash.startsWith('#/editor/')) {
-    await navigate();
-  } else {
-    // hashが無ければ未編集メモ or 新規作成
-    await openInitialMemo();
-  }
-});
+	// ✅ ハッシュが #/editor/xxx ならそのまま開く
+	if ( location.hash.startsWith( '#/editor/' ) ) {
+		await navigate();
+	} else {
+		// hashが無ければ未編集メモ or 新規作成
+		await openInitialMemo();
+	}
+} );
 window.addEventListener( 'hashchange', () => {
 	if ( !auth.currentUser ) return;
 	navigate();
 } );
 
 //7️⃣ メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
+async function flushSave() {
+	if ( saveTimer ) {
+		clearTimeout( saveTimer );
+		saveTimer = null;
+		await saveMemo();
+	}
+}
+function renderTotalSize() {
+	const el = document.getElementById( 'total-size' );
+	if ( !el || !metaCache ) return;
+
+	const bytes = metaCache.totalSize;
+	el.textContent =
+		bytes >= 1024 * 1024
+			? ( bytes / ( 1024 * 1024 ) ).toFixed( 2 ) + ' MB'
+			: Math.round( bytes / 1024 ) + ' KB';
+}
 async function loadMetaOnce() {
 	if ( metaCache ) return metaCache;
 
@@ -344,12 +362,23 @@ async function loadMetaOnce() {
 			m.updated = Date.now();
 			metaWasFixed = true;
 		}
+		if ( typeof m.size !== 'number' ) {
+			m.size = 0;
+			metaWasFixed = true;
+		}
 	} );
 
 	// ✅ 「直した時だけ」保存
 	if ( metaWasFixed ) {
 		await setDoc( metaRef, metaCache );
 	}
+	metaCache.totalSize = metaCache.memos.reduce(
+		//  (sum, m) => sum + (m.deleted ? 0 : (m.size || 0)),
+		( sum, m ) => sum + ( m.size || 0 ),
+		0
+	);
+
+	renderTotalSize();
 
 	return metaCache;
 }
@@ -379,6 +408,13 @@ async function loadMemos() {
 			link.style.fontSize = savedSize;
 			link.onclick = e => {
 				e.preventDefault();
+				// location.hash が既に同じIDなら手動で閉じる
+	if (location.hash === `#/editor/${m.id}`) {
+		sidebar.classList.remove('show'); // サイドバーを閉じる
+		
+		return; // navigate() は呼ばなくてOK
+	}
+
 				location.hash = `#/editor/${m.id}`;
 			};
 			li.appendChild( link );
@@ -396,6 +432,12 @@ async function loadMemos() {
 			// 右側（日付 + メニュー）
 			const rightDiv = document.createElement( 'div' );
 			rightDiv.className = 'memo-right';
+			const sizeSpan = document.createElement( 'span' );
+			sizeSpan.className = 'size-span';
+			sizeSpan.textContent = formatSize( m.size || 0 );
+			if ( isLargeSize( m.size ) ) {
+				sizeSpan.classList.add( 'size-warning' );
+			}
 
 			const dateSpan = document.createElement( 'span' );
 			dateSpan.className = 'date-span';
@@ -444,12 +486,13 @@ async function loadMemos() {
 					menuPopup.style.display === 'block' ? 'none' : 'block';
 			};
 
-			rightDiv.append( dateSpan, menuBtn, menuPopup );
+			rightDiv.append( dateSpan, sizeSpan, menuBtn, menuPopup );
 			//aタグの中に右側も入れる
 			li.appendChild( rightDiv );
 			//li に a を追加
 			memoList.appendChild( li );
 		} );
+	renderTotalSize();
 }
 
 /* Trash表示 */
@@ -494,6 +537,9 @@ function loadTrash() {
 							 ===================== */
 			const rightDiv = document.createElement( 'div' );
 			rightDiv.className = 'memo-right';
+			const sizeSpan = document.createElement( 'span' );
+			sizeSpan.className = 'size-span';
+			sizeSpan.textContent = formatSize( m.size || 0 );
 
 			const dateSpan = document.createElement( 'span' );
 			dateSpan.className = 'date-span';
@@ -544,7 +590,7 @@ function loadTrash() {
 			};
 
 			// 右側 div に追加（順序：日付 → 復元 → メニュー）
-			rightDiv.append( dateSpan, restoreBtn, menuBtn, menuPopup );
+			rightDiv.append( dateSpan, sizeSpan, restoreBtn, menuBtn, menuPopup );
 			li.appendChild( rightDiv );
 
 			trashList.appendChild( li );
@@ -553,6 +599,7 @@ function loadTrash() {
 //currentMemoIdはトースト関係ないのでこっちにおく
 let currentMemoId = null;
 async function openEditor( id ) {
+	await flushSave();
 	currentMemoId = id;
 
 	if ( memoCache[id] ) {
@@ -569,9 +616,6 @@ async function openEditor( id ) {
 async function showEditor( data ) {
 	// 既存タイトルを本文の1行目に追加
 	const content = data.content || '';
-
-
-
 	// 改行を <div> に変換してセット
 	editor.innerHTML = content
 		.split( '\n' )
@@ -589,41 +633,7 @@ async function showEditor( data ) {
 		sel.removeAllRanges();
 		sel.addRange( range );
 	}
-
-	// =================================
-	// 追加: editor 内の [Image] を Firestore から Base64 に置き換える
-	const imgs = editor.querySelectorAll( 'img' );
-	for ( const img of imgs ) {
-		const key = img.dataset.url; // ここに [Image] をセットしていた場合
-		if ( !key ) continue;
-		try {
-			const snap = await getDoc( doc( db, 'images', key ) );
-			if ( snap.exists() ) {
-				img.src = snap.data().data; // Base64
-			}
-		} catch ( err ) {
-			console.warn( 'Failed to load image', key, err );
-		}
-	}
-	// =================================
-
 	show( 'editor' );
-	// ===== ここで最初に文字がある行をタイトルにして保存 =====
-	if ( currentMemoId ) {
-		const lines = editor.innerText.split( '\n' );
-		let title = '';
-		for ( const line of lines ) {
-			const trimmed = line.trim();
-			if ( trimmed ) {
-				title = trimmed;
-				break;
-			}
-		}
-		const meta = getMeta( currentMemoId );
-		if ( meta && meta.title !== title ) {
-			await updateMeta( currentMemoId, { title } );
-		}
-	}
 	window.scrollTo( 0, 0 );
 }
 
@@ -638,19 +648,46 @@ function debounceSave() {
 async function saveMemo() {
 	if ( !currentMemoId ) return;
 
+	const content = editor.innerHTML;
+	const size = new Blob( [content] ).size;
+	const updated = Date.now();
+
+	// タイトルを最初の行にする
 	const lines = editor.innerText.split( '\n' );
-	const title = lines[0].trim();       // 1行目をタイトルに
-	const content = editor.innerHTML;    // 本文全体はHTMLで保存
+	let title = '';
+	for ( const line of lines ) {
+		const trimmed = line.trim();
+		if ( trimmed ) {
+			title = trimmed;
+			break;
+		}
+	}
 
-	memoCache[currentMemoId] = { title, content, updated: Date.now() };
-
+	// Firestore 保存
 	await setDoc(
 		doc( db, 'users', auth.currentUser.uid, 'memos', currentMemoId ),
-		{ content, updated: Date.now() },
+		{ content, updated },
 		{ merge: true }
 	);
 
-	await updateMeta( currentMemoId, { title, updated: Date.now(), edited: 1 } );
+	// meta 更新（タイトル・size・edited）
+	await updateMeta( currentMemoId, { updated, edited: 1, size, title } );
+
+	// memoCache も同期
+	memoCache[currentMemoId] = {
+		...( memoCache[currentMemoId] || {} ),
+		content,
+		updated,
+		title,
+	};
+
+	// total size 更新
+	metaCache.totalSize = metaCache.memos.reduce(
+		( sum, m ) => sum + ( m.deleted ? 0 : ( m.size || 0 ) ),
+		0
+	);
+
+	renderTotalSize();
 }
 
 async function saveMeta() {
@@ -670,31 +707,65 @@ async function updateMeta( id, fields ) {
 	Object.assign( m, fields );
 	await saveMeta();
 }
+async function fixSizesOnce() {
+	let fixed = false;
 
+	for ( const m of metaCache.memos ) {
+		if ( typeof m.size === 'number' && m.size > 0 ) continue;
+
+		const snap = await getDoc(
+			doc( db, 'users', auth.currentUser.uid, 'memos', m.id )
+		);
+		if ( !snap.exists() ) continue;
+
+		const content = snap.data().content || '';
+		m.size = new Blob( [content] ).size;
+		fixed = true;
+	}
+
+	if ( fixed ) {
+		metaCache.totalSize = metaCache.memos.reduce(
+			( sum, m ) => sum + ( m.deleted ? 0 : ( m.size || 0 ) ),
+			0
+		);
+		await saveMeta();
+		renderTotalSize();
+	}
+}
+
+function formatSize( bytes = 0 ) {
+	const kb = Math.max( 0, Math.floor( bytes / 1024 ) );
+
+	if ( kb >= 1024 ) {
+		return ( kb / 1024 ).toFixed( 2 ) + ' MB';
+	}
+	return kb + ' KB';
+}
+function isLargeSize( bytes = 0 ) {
+	return bytes >= 700 * 1024;
+}
 //8️⃣ エディターイベント（入力、貼り付け、キーボード操作）
 //タイトル取得
+function extractTitle( editor ) {
+	const text = editor.innerText || '';
+
+	const lines = text
+		.split( '\n' )
+		.map( l => l.trim() )
+		.filter( l => l.length > 0 );
+
+	return lines[0] || '';
+}
+
+let titleTimer = null;
+
+function updateTitleDebounced( id, title ) {
+	clearTimeout( titleTimer );
+	titleTimer = setTimeout( () => {
+		updateMeta( id, { title, updated: Date.now() } );
+	}, 500 );
+}
 editor.addEventListener( 'input', debounceSave );
-editor.addEventListener( 'input', () => {
-	if ( !currentMemoId ) return;
-
-	// 各行を取得
-	const lines = editor.innerText.split( '\n' );
-
-	// 最初に文字が含まれる行を探す
-	let title = '';
-	for ( const line of lines ) {
-		const trimmed = line.trim();
-		if ( trimmed ) { // 空行でなければタイトルに
-			title = trimmed;
-			break;
-		}
-	}
-
-	const meta = getMeta( currentMemoId );
-	if ( meta && meta.title !== title ) {
-		updateMeta( currentMemoId, { title } );
-	}
-} );
 
 // ===== Italic → h2 変換 =====
 editor.addEventListener( 'beforeinput', e => {
@@ -794,19 +865,16 @@ editor.addEventListener( 'paste', async e => {
 		editor.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 	};
 
-	const insertImageFromBase64 = ( base64, originalUrl = null, isEmbed = false ) => {
+	const insertImageFromBase64 = ( base64, isEmbed = false ) => {
 		const [meta, content] = base64.split( ',' );
 		const mime = meta.match( /:(.*?);/ )[1];
 		const binary = atob( content );
 		const array = new Uint8Array( binary.length );
 		for ( let i = 0; i < binary.length; i++ ) array[i] = binary.charCodeAt( i );
-		const blob = new Blob( [array], { type: mime } );
-		const blobUrl = URL.createObjectURL( blob );
 
 		const img = document.createElement( 'img' );
-		img.src = blobUrl;
-		// img.alt = 'pasted image';
-		if ( originalUrl ) img.dataset.url = originalUrl;
+		img.src = base64;
+		// base64直埋めなので dataset.url は不要
 		if ( isEmbed ) img.dataset.embed = '1';
 
 		img.onerror = () => {
@@ -817,9 +885,7 @@ editor.addEventListener( 'paste', async e => {
 			iframe.style.border = '1px solid #ccc';
 			img.replaceWith( iframe );
 		};
-
-		insertNodeWithCursor( img, originalUrl, isEmbed );
-		img.onload = () => URL.revokeObjectURL( blobUrl );
+		insertNodeWithCursor( img, null, isEmbed );
 	};
 
 	for ( const item of items ) {
@@ -856,14 +922,35 @@ editor.addEventListener( 'paste', async e => {
 			const MAX_BLOB_BYTES = MAX_BYTES / BASE64_EXPAND;
 
 			let quality = 0.8;
-			let safeBlob = await new Promise( resolve => canvas.toBlob( resolve, 'image/jpeg', quality ) );
-			let loopCount = 0;
+let scale = 1.0;
+let loopCount = 0;
 
-			while ( safeBlob.size > MAX_BLOB_BYTES && quality > 0.1 ) {
-				loopCount++;
-				quality -= 0.05;
-				safeBlob = await new Promise( resolve => canvas.toBlob( resolve, 'image/jpeg', quality ) );
-			}
+// 元のキャンバスサイズを保持
+const originalWidth = canvas.width;
+const originalHeight = canvas.height;
+
+let safeBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+
+while (safeBlob.size > MAX_BLOB_BYTES && (quality > 0.1 || scale > 0.1)) {
+    loopCount++;
+
+    if (quality > 0.1) {
+        quality -= 0.05;
+        // 元のキャンバスで再圧縮
+        safeBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    } else {
+        // scaleを下げて新しい一時キャンバスを作る
+        scale *= 0.9;
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = Math.floor(originalWidth * scale);
+        tmpCanvas.height = Math.floor(originalHeight * scale);
+        const ctx = tmpCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+
+        // tmpCanvas で再圧縮
+        safeBlob = await new Promise(resolve => tmpCanvas.toBlob(resolve, 'image/jpeg', quality));
+    }
+}
 
 			// ========================
 			// Firestore保存 + showToastで容量とループ回数表示
@@ -873,7 +960,6 @@ editor.addEventListener( 'paste', async e => {
 				const now = new Date();
 				const pad = n => n.toString().padStart( 2, '0' );
 				const filename = `pasted_${now.getFullYear()}-${pad( now.getMonth() + 1 )}-${pad( now.getDate() )}_${pad( now.getHours() )}-${pad( now.getMinutes() )}-${pad( now.getSeconds() )}`;
-				await setDoc( doc( db, "images", filename ), { data: base64 } );
 				// サイズ表示用関数
 				function formatSize( bytes ) {
 					if ( bytes >= 1024 * 1024 ) {
@@ -888,11 +974,12 @@ editor.addEventListener( 'paste', async e => {
 				const originalSizeStr = formatSize( originalSizeBytes );
 
 				// alert 表示
-				alert( `${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}` );
-				showToast( `${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}` );
+				// alert( `${now}: Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}` );
+				showToast( `Saved: ${savedSizeStr} (Original: ${originalSizeStr}) | JPEG loops: ${loopCount}` );
 
 
-				insertImageFromBase64( base64, filename, true );
+				// insertImageFromBase64( base64, filename, true );
+				insertImageFromBase64( base64, true );
 			};
 			reader.readAsDataURL( safeBlob );
 
@@ -1102,7 +1189,7 @@ editor.addEventListener( 'keydown', e => {
 	if ( !sel.rangeCount ) return;
 	const range = sel.getRangeAt( 0 );
 	// 範囲選択なら完全にデフォルトに任せる
-if (!range.collapsed) return;
+	if ( !range.collapsed ) return;
 
 	// テキストノードなら親をチェック
 	let node = range.startContainer;
@@ -1133,9 +1220,9 @@ if (!range.collapsed) return;
 } );
 
 /* 9️⃣ ナビゲーション・新規作成ボタン*/
-document.getElementById('go-trash').onclick = e => {
+document.getElementById( 'go-trash' ).onclick = e => {
 	e.preventDefault();
-  window.open('https://migawariw.github.io/DreadNote6/DreadNote/icon1/index.html#/trash', '_blank');
+	window.open( 'https://migawariw.github.io/DreadNote6/DreadNote/icon1/index.html#/trash', '_blank' );
 };
 document.getElementById( 'back-list' ).onclick = () => { location.hash = '#/list'; }
 document.getElementById( 'back' ).onclick = () => { if ( history.length > 1 ) history.back(); else location.hash = '#/list'; }
@@ -1153,7 +1240,8 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 		id: ref.id,
 		title: '',
 		updated: Date.now(),
-		deleted: false
+		deleted: false,
+		size: 0
 	} );
 
 	// meta保存
@@ -1161,8 +1249,8 @@ document.getElementById( 'new-memo' ).onclick = async () => {
 		doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
 		metaCache
 	);
-		// 🔒 サイドバーを閉じる
-	sidebar.classList.remove('show');
+	// 🔒 サイドバーを閉じる
+	sidebar.classList.remove( 'show' );
 
 	// エディタへ
 	location.hash = `#/editor/${ref.id}`;
@@ -1171,39 +1259,39 @@ document.getElementById( 'new-memo-2' ).onclick =
 	document.getElementById( 'new-memo' ).onclick;
 /* navigate() を hash に依存しない、安全版に変更 */
 async function navigate() {
-  if (!auth.currentUser) return show('login');
+	if ( !auth.currentUser ) return show( 'login' );
 
-  await loadMetaOnce(); // ← 必ず metaCache をロード
+	await loadMetaOnce(); // ← 必ず metaCache をロード
 
-  const hash = location.hash;
+	const hash = location.hash;
 
-  if (hash.startsWith('#/editor/')) {
-    const id = hash.split('/')[2];
-    if (!id) return;
+	if ( hash.startsWith( '#/editor/' ) ) {
+		const id = hash.split( '/' )[2];
+		if ( !id ) return;
 
-    const meta = getMeta(id);
-    if (!meta) {
-      // Firestoreにまだ存在するか確認
-      const snap = await getDoc(doc(db, 'users', auth.currentUser.uid, 'memos', id));
-      if (!snap.exists()) {
-        showToast('メモが存在しません');
-        location.hash = '#/list';
-        return;
-      }
-      // metaCache に追加
-      const data = snap.data();
-      metaCache.memos.push({
-        id,
-        title: data.title || '',
-        updated: data.updated || Date.now(),
-        deleted: !!data.deleted,
-        edited: data.edited !== undefined ? data.edited : 1
-      });
-      await saveMeta();
-    }
+		const meta = getMeta( id );
+		if ( !meta ) {
+			// Firestoreにまだ存在するか確認
+			const snap = await getDoc( doc( db, 'users', auth.currentUser.uid, 'memos', id ) );
+			if ( !snap.exists() ) {
+				showToast( 'メモが存在しません' );
+				location.hash = '#/list';
+				return;
+			}
+			// metaCache に追加
+			const data = snap.data();
+			metaCache.memos.push( {
+				id,
+				title: data.title || '',
+				updated: data.updated || Date.now(),
+				deleted: !!data.deleted,
+				edited: data.edited !== undefined ? data.edited : 1
+			} );
+			await saveMeta();
+		}
 
-    await openEditor(id);
-		  // 🔒 サイドバーを閉じる
-  sidebar.classList.remove('show');
-  }
+		await openEditor( id );
+		// 🔒 サイドバーを閉じる
+		sidebar.classList.remove( 'show' );
+	}
 }

@@ -8,6 +8,20 @@ body {
 	max-width: 100%;
 	overflow-x: hidden;
 }
+.size-span {
+  font-size: 0.75em;
+  opacity: 0.6;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.size-warning {
+  color: rgb(255, 0, 0);
+  font-weight: 600;
+}
+#total-size {
+  text-align: right;   /* 数字を右寄せ */
+  /* font-weight: bold;   目立たせたい場合 */
+}
 
 #sidebar {
   position: fixed;
@@ -35,20 +49,22 @@ body.dark #sidebar{
   transform: translateX(0);
 }
 
+
 #sidebar-toggle {
   position: fixed;
-  top: 10px;
+  top: 0px;
   left: 10px;
   z-index: 1100;
   padding-top: 0;
   border-radius: 20px;
+  font-size: 32px;
   background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
 }
 
 body.dark #sidebar-toggle {
   background: #000000;
-    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2);
+    /* box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2); */
 }
 #sidebar-toggle2 {
   position: absolute;
@@ -57,14 +73,14 @@ body.dark #sidebar-toggle {
   left: 10px;
   z-index: 1100;
   padding-top: 0;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  /* border-radius: 20px; */
+  background: #f9f9f9;
+  /* box-shadow: 0 2px 4px rgba(0,0,0,0.2); */
 }
 
 body.dark #sidebar-toggle2 {
   background: #000000;
-    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2);
+    /* box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2); */
 }
 /* section {
 	padding-top: 0;
@@ -127,6 +143,7 @@ input,
 button {
 	font-size: 17px;
 	margin: 0px 0;
+	/* padding-bottom: 0; */
 }
 
 button {
@@ -212,10 +229,18 @@ li .memo-title {
 	line-height: 1.5;
 	font-weight: 610;
 }
+h2 {
+  display: block;       /* ブロック要素 */
+  font-size: 1.5em;     /* 親要素の1.5倍のフォントサイズ */
+  margin-block-start: 0.5em;  /* 上の余白 */
+  margin-block-end: 0.5em;    /* 下の余白 */
+  font-weight: bold;    /* 太字 */
+  margin-left: 0;
+}
 
 #editor {
 	min-height: 70vh;
-	padding-top: 50px;
+	padding-top: 45px;
 	outline: none;
 	white-space: pre-wrap;
 	word-break: break-word;
@@ -254,11 +279,6 @@ body.dark #editor a:visited {
 } */
 
 #sidebar-toggle {
-  font-size: 32px;
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  padding-top: 0px;
   z-index: 1100;
   transition: transform 0s ease, opacity 0s ease;
 }
