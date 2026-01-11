@@ -62,7 +62,11 @@ function closeSidebar() {
 	sidebar.classList.remove( 'show' );
 }
 
-sidebarToggle2.onclick = closeSidebar;
+// サイドバー閉じるボタン
+sidebarToggle2.onclick = async () => {
+    await flushSave();
+    closeSidebar();
+};
 
 editor.addEventListener( 'blur', () => {
 	setTimeout( () => {
@@ -228,39 +232,39 @@ document.getElementById( 'google-login' ).onclick = async () => { try { await si
 
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
 
-async function openInitialMemo() {
-	await loadMetaOnce();
+// async function openInitialMemo() {
+// 	await loadMetaOnce();
 
-	// 未編集メモを探す
-	let unedited = metaCache.memos.find( m => !m.deleted && m.edited === 0 );
-	let memoId;
+// 	// 未編集メモを探す
+// 	let unedited = metaCache.memos.find( m => !m.deleted && m.edited === 0 );
+// 	let memoId;
 
-	if ( unedited ) {
-		memoId = unedited.id;
-	} else {
-		// なければ新規作成
-		const ref = await addDoc(
-			collection( db, 'users', auth.currentUser.uid, 'memos' ),
-			{ title: '', content: '', updated: Date.now(), edited: 0 }
-		);
+// 	if ( unedited ) {
+// 		memoId = unedited.id;
+// 	} else {
+// 		// なければ新規作成
+// 		const ref = await addDoc(
+// 			collection( db, 'users', auth.currentUser.uid, 'memos' ),
+// 			{ title: '', content: '', updated: Date.now(), edited: 0 }
+// 		);
 
-		metaCache.memos.push( {
-			id: ref.id,
-			title: '',
-			updated: Date.now(),
-			deleted: false,
-			edited: 0
-		} );
-		await saveMeta();
+// 		metaCache.memos.push( {
+// 			id: ref.id,
+// 			title: '',
+// 			updated: Date.now(),
+// 			deleted: false,
+// 			edited: 0
+// 		} );
+// 		await saveMeta();
 
-		memoId = ref.id;
-	}
+// 		memoId = ref.id;
+// 	}
 
-	// 🔒 サイドバーを閉じる
-	sidebar.classList.remove( 'show' );
+// 	// 🔒 サイドバーを閉じる
+// 	sidebar.classList.remove( 'show' );
 
-	location.hash = `#/editor/${memoId}`;
-}
+// 	location.hash = `#/editor/${memoId}`;
+// }
 
 // 認証状態変化時
 onAuthStateChanged( auth, async user => {
@@ -283,7 +287,7 @@ onAuthStateChanged( auth, async user => {
 		await navigate();
 	} else {
 		// hashが無ければ未編集メモ or 新規作成
-		await openInitialMemo();
+		await openNewMemo();
 	}
 } );
 window.addEventListener( 'hashchange', () => {
@@ -292,11 +296,70 @@ window.addEventListener( 'hashchange', () => {
 } );
 
 //7️⃣ メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
+let currentMemoId = null;
+let isNewMemo = false;
+let saveTimer = null;
+// サイドバーで新規メモを作る
+async function openNewMemo() {
+    isNewMemo = true;
+    currentMemoId = null;
+    location.hash = '#/editor/new';
+
+    const emptyData = { content: '', title: '' };
+    await showEditor(emptyData);
+
+    editor.innerHTML = '';
+    editor.contentEditable = 'true';
+    editor.focus();
+}
+
+// サイドバーから既存メモを開く
+async function openMemo(id) {
+    await flushSave(); // まず前のメモを保存／削除
+    currentMemoId = id;
+    isNewMemo = false;
+    location.hash = `#/editor/${id}`;
+    showEditor();
+    editor.innerHTML = memoCache[id]?.content || '';
+    editor.focus();
+}
+
+// エディターで入力開始
+editor.addEventListener('input', async () => {
+    if (isNewMemo && !currentMemoId) {
+        // 新規メモを作成
+        const ref = await addDoc(collection(db, 'users', auth.currentUser.uid, 'memos'), {
+            title: '',
+            content: '',
+            updated: Date.now(),
+            edited: 0,
+						size: 0,
+        });
+        currentMemoId = ref.id;
+        metaCache.memos.push({ id: currentMemoId, title: '', updated: Date.now(), deleted: false });
+        await saveMeta();
+        isNewMemo = false;
+    }
+    debounceSave();
+});
+
 async function flushSave() {
 	if ( saveTimer ) {
 		clearTimeout( saveTimer );
 		saveTimer = null;
 		await saveMemo();
+		// 空の new メモは削除
+        if (location.hash === '#/editor/new' && (!editor.innerText.trim() || editor.innerHTML === '')) {
+            if (currentMemoId) {
+                await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
+                metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
+                delete memoCache[currentMemoId];
+                await saveMeta();
+            }
+            currentMemoId = null;
+            editor.innerHTML = '';
+            isNewMemo = true;
+        }
 	}
 }
 function renderTotalSize() {
@@ -596,8 +659,7 @@ function loadTrash() {
 			trashList.appendChild( li );
 		} );
 }
-//currentMemoIdはトースト関係ないのでこっちにおく
-let currentMemoId = null;
+
 async function openEditor( id ) {
 	await flushSave();
 	currentMemoId = id;
@@ -613,13 +675,13 @@ async function openEditor( id ) {
 	showEditor( data );
 }
 
-async function showEditor( data ) {
+async function showEditor( data = { content: '', title: '' } ) {
 	// 既存タイトルを本文の1行目に追加
 	const content = data.content || '';
 	// 改行を <div> に変換してセット
 	editor.innerHTML = content
 		.split( '\n' )
-		.map( line => line || '<div><br></div>' )  // 空行も div に変換
+		.map( line => line || '' )  // 空行も div に変換
 		.join( '' );
 	editor.style.fontSize = savedSize + 'px';
 
@@ -637,7 +699,7 @@ async function showEditor( data ) {
 	window.scrollTo( 0, 0 );
 }
 
-let saveTimer = null;
+// let saveTimer = null;
 
 function debounceSave() {
 	clearTimeout( saveTimer );
@@ -1229,34 +1291,38 @@ document.getElementById( 'back' ).onclick = () => { if ( history.length > 1 ) hi
 /* New memo button */
 document.getElementById( 'new-memo' ).onclick = async () => {
 	await loadMetaOnce(); // ← 必ず先に呼ぶ
-	// 本文ドキュメントを1件だけ作る
-	const ref = await addDoc(
-		collection( db, 'users', auth.currentUser.uid, 'memos' ),
-		{ title: '', content: '', updated: Date.now() }
-	);
+	// // 本文ドキュメントを1件だけ作る
+	// const ref = await addDoc(
+	// 	collection( db, 'users', auth.currentUser.uid, 'memos' ),
+	// 	{ title: '', content: '', updated: Date.now() }
+	// );
 
-	// meta（目次箱）に追加
-	metaCache.memos.push( {
-		id: ref.id,
-		title: '',
-		updated: Date.now(),
-		deleted: false,
-		size: 0
-	} );
+	// // meta（目次箱）に追加
+	// metaCache.memos.push( {
+	// 	id: ref.id,
+	// 	title: '',
+	// 	updated: Date.now(),
+	// 	deleted: false,
+	// 	size: 0
+	// } );
 
-	// meta保存
-	await setDoc(
-		doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
-		metaCache
-	);
-	// 🔒 サイドバーを閉じる
+	// // meta保存
+	// await setDoc(
+	// 	doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
+	// 	metaCache
+	// );
+	// // 🔒 サイドバーを閉じる
+	// sidebar.classList.remove( 'show' );
+
+	// // エディタへ
+	// location.hash = `#/editor/${ref.id}`;
 	sidebar.classList.remove( 'show' );
-
-	// エディタへ
-	location.hash = `#/editor/${ref.id}`;
+	location.hash = '#/editor/new';
 };
 document.getElementById( 'new-memo-2' ).onclick =
 	document.getElementById( 'new-memo' ).onclick;
+	window.addEventListener('hashchange', async () => { await flushSave(); });
+window.addEventListener('beforeunload', async (e) => { await flushSave(); });
 /* navigate() を hash に依存しない、安全版に変更 */
 async function navigate() {
 	if ( !auth.currentUser ) return show( 'login' );
@@ -1268,16 +1334,21 @@ async function navigate() {
 	if ( hash.startsWith( '#/editor/' ) ) {
 		const id = hash.split( '/' )[2];
 		if ( !id ) return;
+		if (id === 'new') {
+           await openNewMemo(); // 新規メモを作成
+           return;
+       }
+
 
 		const meta = getMeta( id );
 		if ( !meta ) {
-			// Firestoreにまだ存在するか確認
-			const snap = await getDoc( doc( db, 'users', auth.currentUser.uid, 'memos', id ) );
-			if ( !snap.exists() ) {
-				showToast( 'メモが存在しません' );
-				location.hash = '#/list';
-				return;
-			}
+            // Firestoreにまだ存在するか確認
+            const snap = await getDoc(doc(db, 'users', auth.currentUser.uid, 'memos', id));
+            if (!snap.exists()) {
+                showToast('メモが存在しません');
+                sidebar.classList.add('show'); // 一覧表示
+                return;
+            }
 			// metaCache に追加
 			const data = snap.data();
 			metaCache.memos.push( {
@@ -1285,7 +1356,8 @@ async function navigate() {
 				title: data.title || '',
 				updated: data.updated || Date.now(),
 				deleted: !!data.deleted,
-				edited: data.edited !== undefined ? data.edited : 1
+				edited: data.edited !== undefined ? data.edited : 1,
+				size: data.content ? data.content.length : 0
 			} );
 			await saveMeta();
 		}
