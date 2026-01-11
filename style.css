@@ -8,6 +8,13 @@ body {
 	max-width: 100%;
 	overflow-x: hidden;
 }
+#memo-list li.active {
+    background-color: rgb(240, 240, 240); /* 好きな色に変更 */
+    border-left: 4px solid #0071e3; /* 左ラインで強調 */
+}
+body.dark #memo-list li.active {
+	background-color: rgb(28, 28, 28);
+}
 .size-span {
   font-size: 0.75em;
   opacity: 0.6;

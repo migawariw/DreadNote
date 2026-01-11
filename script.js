@@ -280,7 +280,8 @@ onAuthStateChanged( auth, async user => {
 
 	// ✅ まず metaCache をロード
 	await loadMetaOnce();
-	await fixSizesOnce();
+	// await fixSizesOnce();
+	fixSizesOnce().then(() => console.log('Sizes fixed in background'));
 
 	// ✅ ハッシュが #/editor/xxx ならそのまま開く
 	if ( location.hash.startsWith( '#/editor/' ) ) {
@@ -344,23 +345,28 @@ editor.addEventListener('input', async () => {
 });
 
 async function flushSave() {
-	if ( saveTimer ) {
-		clearTimeout( saveTimer );
-		saveTimer = null;
-		await saveMemo();
-		// 空の new メモは削除
-        if (location.hash === '#/editor/new' && (!editor.innerText.trim() || editor.innerHTML === '')) {
-            if (currentMemoId) {
-                await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
-                metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
-                delete memoCache[currentMemoId];
-                await saveMeta();
-            }
+    if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        await saveMemo();
+
+        // 🔹 内容が空のメモは削除
+        if (currentMemoId && (!editor.innerText.trim() || editor.innerHTML === '')) {
+            // Firestoreから削除
+            await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
+
+            // metaCache からも削除
+            metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
+            delete memoCache[currentMemoId];
+
+            await saveMeta();
+
+            // editorリセット
             currentMemoId = null;
-            editor.innerHTML = '';
             isNewMemo = true;
+            editor.innerHTML = '';
         }
-	}
+    }
 }
 function renderTotalSize() {
 	const el = document.getElementById( 'total-size' );
@@ -457,6 +463,10 @@ async function loadMemos() {
 
 			const li = document.createElement( 'li' );
 			li.style.fontSize = savedSize + 'px'; // ← 一覧に反映
+			// 🔹 現在開いているメモに active クラス
+            if (m.id === currentMemoId) {
+                li.classList.add('active');
+            }
 
 			/* ========== li 全体を覆う a ========== */
 			const link = document.createElement( 'a' );
@@ -771,19 +781,19 @@ async function updateMeta( id, fields ) {
 }
 async function fixSizesOnce() {
 	let fixed = false;
+    const memosToCheck = metaCache.memos.filter(m => !m.size || m.size <= 0);
+    if (memosToCheck.length === 0) return;
 
-	for ( const m of metaCache.memos ) {
-		if ( typeof m.size === 'number' && m.size > 0 ) continue;
+    // Firestore getDocs でまとめて取得
+    const memoRefs = memosToCheck.map(m => doc(db, 'users', auth.currentUser.uid, 'memos', m.id));
+    const snaps = await Promise.all(memoRefs.map(ref => getDoc(ref)));
 
-		const snap = await getDoc(
-			doc( db, 'users', auth.currentUser.uid, 'memos', m.id )
-		);
-		if ( !snap.exists() ) continue;
-
-		const content = snap.data().content || '';
-		m.size = new Blob( [content] ).size;
-		fixed = true;
-	}
+    snaps.forEach((snap, i) => {
+        if (!snap.exists()) return;
+        const content = snap.data().content || '';
+        memosToCheck[i].size = new Blob([content]).size;
+        fixed = true;
+    });
 
 	if ( fixed ) {
 		metaCache.totalSize = metaCache.memos.reduce(
