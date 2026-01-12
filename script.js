@@ -232,39 +232,7 @@ document.getElementById( 'google-login' ).onclick = async () => { try { await si
 
 document.getElementById( 'logout-btn' ).onclick = () => { userMenu.style.display = 'none'; metaCache = null; signOut( auth ); location.hash = '#login'; }
 
-// async function openInitialMemo() {
-// 	await loadMetaOnce();
 
-// 	// 未編集メモを探す
-// 	let unedited = metaCache.memos.find( m => !m.deleted && m.edited === 0 );
-// 	let memoId;
-
-// 	if ( unedited ) {
-// 		memoId = unedited.id;
-// 	} else {
-// 		// なければ新規作成
-// 		const ref = await addDoc(
-// 			collection( db, 'users', auth.currentUser.uid, 'memos' ),
-// 			{ title: '', content: '', updated: Date.now(), edited: 0 }
-// 		);
-
-// 		metaCache.memos.push( {
-// 			id: ref.id,
-// 			title: '',
-// 			updated: Date.now(),
-// 			deleted: false,
-// 			edited: 0
-// 		} );
-// 		await saveMeta();
-
-// 		memoId = ref.id;
-// 	}
-
-// 	// 🔒 サイドバーを閉じる
-// 	sidebar.classList.remove( 'show' );
-
-// 	location.hash = `#/editor/${memoId}`;
-// }
 
 // 認証状態変化時
 onAuthStateChanged( auth, async user => {
@@ -358,20 +326,32 @@ async function flushSave() {
         await saveMemo();
 
         // editorが空 AND DBに保存済みのNew Memoだけ削除する場合
-        if (currentMemoId && (!editor.innerText.trim() || editor.innerHTML === '<div><br></div>')) {
-            const m = getMeta(currentMemoId);
-            if (m) {
-                m.deleted = true;
-                m.updated = Date.now();
-                await saveMeta();
-            }
+        if (
+            currentMemoId &&
+            (!editor.innerText.trim() || editor.innerHTML === '<div><br></div>')
+        ) {
+            // ユーザーに確認
+            const confirmDelete = confirm(
+                'このメモは空です。削除してもよろしいですか？'
+            );
 
-            // editorリセット
-            currentMemoId = null;
-            isNewMemo = true;
-            editor.innerHTML = '';
+            if (confirmDelete) {
+                const m = getMeta(currentMemoId);
+                if (m) {
+                    m.deleted = true;
+                    m.updated = Date.now();
+                    await saveMeta();
+                }
+
+                // editorリセット
+                currentMemoId = null;
+                isNewMemo = true;
+                editor.innerHTML = '';
+            } else {
+                // ユーザーがキャンセルした場合は削除せず、新規メモ状態を維持
+                console.log('空のメモ削除をキャンセルしました');
+            }
         }
-				
     }
 }
 function renderTotalSize() {
@@ -1473,31 +1453,6 @@ document.getElementById( 'back' ).onclick = () => { if ( history.length > 1 ) hi
 /* New memo button */
 document.getElementById( 'new-memo' ).onclick = async () => {
 	await loadMetaOnce(); // ← 必ず先に呼ぶ
-	// // 本文ドキュメントを1件だけ作る
-	// const ref = await addDoc(
-	// 	collection( db, 'users', auth.currentUser.uid, 'memos' ),
-	// 	{ title: '', content: '', updated: Date.now() }
-	// );
-
-	// // meta（目次箱）に追加
-	// metaCache.memos.push( {
-	// 	id: ref.id,
-	// 	title: '',
-	// 	updated: Date.now(),
-	// 	deleted: false,
-	// 	size: 0
-	// } );
-
-	// // meta保存
-	// await setDoc(
-	// 	doc( db, 'users', auth.currentUser.uid, 'meta', 'main' ),
-	// 	metaCache
-	// );
-	// // 🔒 サイドバーを閉じる
-	// sidebar.classList.remove( 'show' );
-
-	// // エディタへ
-	// location.hash = `#/editor/${ref.id}`;
 	sidebar.classList.remove( 'show' );
 	location.hash = '#/editor/new';
 };
