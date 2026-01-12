@@ -297,84 +297,117 @@ window.addEventListener( 'hashchange', () => {
 } );
 
 //7️⃣ メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
+// ==========================
+// グローバル変数
+// ==========================
+let saveTimer = null;       // ← これを忘れずに宣言
 let currentMemoId = null;
 let isNewMemo = false;
-let saveTimer = null;
-// サイドバーで新規メモを作る
+let tempNewMemo = null;     // 空の新規メモをローカルに保持
+
+// ==========================
+// サイドバーで新規メモ作成
+// ==========================
 async function openNewMemo() {
-	isNewMemo = true;
-	currentMemoId = null;
-	location.hash = '#/editor/new';
+    isNewMemo = true;
+    currentMemoId = null;
+    tempNewMemo = { content: '', title: '' }; // ローカル保持
 
-	const emptyData = { content: '', title: '' };
-	await showEditor( emptyData );
-
-	editor.innerHTML = '<div><br></div>';
-	editor.contentEditable = 'true';
-	editor.focus();
+    location.hash = '#/editor/new';
+    await showEditor(tempNewMemo);
+    editor.innerHTML = '<div><br></div>';
+    editor.contentEditable = 'true';
+    editor.focus();
 }
 
-// サイドバーから既存メモを開く
-async function openMemo( id ) {
-	await flushSave(); // まず前のメモを保存／削除
-	currentMemoId = id;
-	isNewMemo = false;
-	location.hash = `#/editor/${id}`;
-	showEditor();
-	editor.innerHTML = memoCache[id]?.content || '<div><br></div>';
-	editor.focus();
+// ==========================
+// 既存メモを開く
+// ==========================
+async function openMemo(id) {
+    await flushSave(); // 前のメモを保存／削除
+    currentMemoId = id;
+    isNewMemo = false;
+    location.hash = `#/editor/${id}`;
+    showEditor();
+    editor.innerHTML = memoCache[id]?.content || '<div><br></div>';
+    editor.focus();
 }
 
-// エディターで入力開始
-let creatingNewMemo = false;
+// ==========================
+// 入力時処理（新規メモをDBに登録する）
+// ==========================
+editor.addEventListener('input', async () => {
+    // 新規メモでまだDBに登録されていない場合
+    if (isNewMemo && !currentMemoId && tempNewMemo) {
+        const content = editor.innerHTML;
+        if (content.trim() !== '' && content !== '<div><br></div>') {
+            // 初めて文字が入力された → DB登録
+            const ref = await addDoc(
+                collection(db, 'users', auth.currentUser.uid, 'memos'),
+                {
+                    title: '',
+                    content,
+                    updated: Date.now(),
+                    edited: 0,
+                    size: new Blob([content]).size,
+                }
+            );
 
-editor.addEventListener( 'input', async () => {
-	if ( isNewMemo && !currentMemoId && !creatingNewMemo ) {
-		creatingNewMemo = true;
-		try {
-			const ref = await addDoc( collection( db, 'users', auth.currentUser.uid, 'memos' ), {
-				title: '',
-				content: '',
-				updated: Date.now(),
-				edited: 0,
-				size: 0,
-			} );
-			currentMemoId = ref.id;
-			metaCache.memos.push( { id: currentMemoId, title: '', updated: Date.now(), deleted: false } );
-			await saveMeta();
-			isNewMemo = false;
-		} finally {
-			creatingNewMemo = false;
-		}
-	}
-	debounceSave();
-} );
+            currentMemoId = ref.id;
+            metaCache.memos.push({
+                id: currentMemoId,
+                title: '',
+                updated: Date.now(),
+                deleted: false,
+                edited: 0
+            });
 
+            await saveMeta();
+
+            isNewMemo = false;
+            tempNewMemo = null;
+        } else {
+            // まだ文字がない → DB登録せず
+            return;
+        }
+    }
+
+    debounceSave();
+});
+
+// ==========================
+// saveTimer 安全な debounceSave
+// ==========================
+function debounceSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveMemo, 500);
+}
+
+// ==========================
+// flushSave: 入力内容を保存して空メモは無理に削除しない
+// ==========================
 async function flushSave() {
-	if ( saveTimer ) {
-		clearTimeout( saveTimer );
-		saveTimer = null;
-		await saveMemo();
+    if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        await saveMemo();
 
-		// 🔹 内容が空のメモは削除
-		if ( currentMemoId && ( !editor.innerText.trim() || editor.innerHTML === '' ) ) {
-			// Firestoreから削除
-			// await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'memos', currentMemoId));
-			await updateMeta( currentMemoId, { deleted: true, updated: Date.now() } );
+        // editorが空 AND DBに保存済みのNew Memoだけ削除する場合
+        if (currentMemoId && (!editor.innerText.trim() || editor.innerHTML === '<div><br></div>')) {
+            const m = getMeta(currentMemoId);
+            if (m) {
+                m.deleted = true;
+                m.updated = Date.now();
+                await saveMeta();
+            }
 
-
-			// metaCache からも削除←これするとdeleteDocと同じことになる
-			// metaCache.memos = metaCache.memos.filter(m => m.id !== currentMemoId);
-			// delete memoCache[currentMemoId];
-
-			await saveMeta();
-
-			// editorリセット
-			currentMemoId = null;
-			isNewMemo = true;
-			editor.innerHTML = '';
-		}
-	}
+            // editorリセット
+            currentMemoId = null;
+            isNewMemo = true;
+            editor.innerHTML = '';
+        }
+				
+    }
 }
 function renderTotalSize() {
 	const el = document.getElementById( 'total-size' );
@@ -474,7 +507,7 @@ async function loadMemos() {
 	memoList.innerHTML = '';
 
 	metaCache.memos
-		.filter( m => !m.deleted )
+		.filter(m => !m.deleted && (m.content || m.title)) // ←空のNew Memoは除外
 		.sort( ( a, b ) => b.updated - a.updated )
 		.forEach( m => {
 
@@ -845,10 +878,7 @@ async function showEditor( data = { content: '', title: '' } ) {
 
 // let saveTimer = null;
 
-function debounceSave() {
-	clearTimeout( saveTimer );
-	saveTimer = setTimeout( saveMemo, 500 );
-}
+
 
 //7️⃣-2 メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
 async function saveMemo() {
