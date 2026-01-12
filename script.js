@@ -331,9 +331,9 @@ async function flushSave() {
             (!editor.innerText.trim() || editor.innerHTML === '<div><br></div>')
         ) {
             // ユーザーに確認
-            const confirmDelete = confirm(
-                'このメモは空です。削除してもよろしいですか？'
-            );
+            // const confirmDelete = confirm(
+            //     'このメモは空です。削除してもよろしいですか？'
+            // );
 
             if (confirmDelete) {
                 const m = getMeta(currentMemoId);
@@ -823,8 +823,35 @@ async function showEditor( data = { content: '', title: '' } ) {
 
 // let saveTimer = null;
 
+let prevHash = location.hash;
+let ignoreNextHashChange = false;
 
+window.addEventListener('hashchange', (e) => {
+    if (ignoreNextHashChange) {
+        ignoreNextHashChange = false;
+        prevHash = location.hash; // ここは新しいhashで更新
+        return;
+    }
 
+    const newHash = location.hash;
+
+    if (prevHash === '#/editor/new') {
+        const ok = confirm('なくなっていいorサイドバーに残ってたらOK');
+        if (!ok) {
+            // キャンセルなら元のハッシュに戻す
+            ignoreNextHashChange = true; // 再発火を無視
+            location.hash = prevHash;
+            return;
+        }
+    }
+
+    // 通常のナビゲーション
+    if (auth.currentUser) {
+        navigate();
+    }
+
+    prevHash = newHash;
+});
 //7️⃣-2 メモ関連の処理の関数（loadMeta, loadMemos, openEditor, saveMemo, updateMeta など）
 async function saveMemo() {
 	if ( !currentMemoId ) return;
