@@ -312,6 +312,8 @@ async function openNewMemo() {
     isNewMemo = true;
     currentMemoId = null;
     tempNewMemo = { content: '', title: '' }; // ローカル保持
+		creatingMemo = false; // ← ★これを必ず入れる
+
 
     location.hash = '#/editor/new';
     await showEditor(tempNewMemo);
@@ -336,44 +338,7 @@ async function openMemo(id) {
 // ==========================
 // 入力時処理（新規メモをDBに登録する）
 // ==========================
-editor.addEventListener('input', async () => {
-    // 新規メモでまだDBに登録されていない場合
-    if (isNewMemo && !currentMemoId && tempNewMemo) {
-        const content = editor.innerHTML;
-        if (content.trim() !== '' && content !== '<div><br></div>') {
-            // 初めて文字が入力された → DB登録
-            const ref = await addDoc(
-                collection(db, 'users', auth.currentUser.uid, 'memos'),
-                {
-                    title: '',
-                    content,
-                    updated: Date.now(),
-                    edited: 0,
-                    size: new Blob([content]).size,
-                }
-            );
 
-            currentMemoId = ref.id;
-            metaCache.memos.push({
-                id: currentMemoId,
-                title: '',
-                updated: Date.now(),
-                deleted: false,
-                edited: 0
-            });
-
-            await saveMeta();
-
-            isNewMemo = false;
-            tempNewMemo = null;
-        } else {
-            // まだ文字がない → DB登録せず
-            return;
-        }
-    }
-
-    debounceSave();
-});
 
 // ==========================
 // saveTimer 安全な debounceSave
@@ -506,8 +471,8 @@ async function loadMemos() {
 	await loadMetaOnce();
 	memoList.innerHTML = '';
 
-	metaCache.memos
-		.filter(m => !m.deleted && (m.content || m.title)) // ←空のNew Memoは除外
+metaCache.memos
+  .filter(m => !m.deleted && (m.hasContent ?? true))// ←空のNew Memoは除外
 		.sort( ( a, b ) => b.updated - a.updated )
 		.forEach( m => {
 
@@ -887,6 +852,7 @@ async function saveMemo() {
 	const content = editor.innerHTML;
 	const size = new Blob( [content] ).size;
 	const updated = Date.now();
+	const hasContent = content !== '<div><br></div>';
 
 	// タイトルを最初の行にする
 	const lines = editor.innerText.split( '\n' );
@@ -907,7 +873,7 @@ async function saveMemo() {
 	);
 
 	// meta 更新（タイトル・size・edited）
-	await updateMeta( currentMemoId, { updated, edited: 1, size, title } );
+	await updateMeta( currentMemoId, { updated, edited: 1, size, title, hasContent } );
 
 	// memoCache も同期
 	memoCache[currentMemoId] = {
@@ -1001,8 +967,50 @@ function updateTitleDebounced( id, title ) {
 		updateMeta( id, { title, updated: Date.now() } );
 	}, 500 );
 }
-editor.addEventListener( 'input', debounceSave );
+editor.addEventListener('input', () => {
+    if (isNewMemo) {
+        tryCreateMemoOnce();
+    }
+    debounceSave();
+});
+let creatingMemo = false;
 
+async function tryCreateMemoOnce() {
+    if (!isNewMemo) return;
+    if (currentMemoId) return;
+    if (creatingMemo) return;
+
+    const content = editor.innerHTML;
+    if (content === '<div><br></div>' || !editor.innerText.trim()) return;
+
+    creatingMemo = true;
+
+    const ref = await addDoc(
+        collection(db, 'users', auth.currentUser.uid, 'memos'),
+        {
+            content,
+            updated: Date.now(),
+            edited: 0,
+            size: new Blob([content]).size,
+        }
+    );
+
+    currentMemoId = ref.id;
+    isNewMemo = false;
+    tempNewMemo = null;
+
+    metaCache.memos.push({
+        id: ref.id,
+        title: '',
+        updated: Date.now(),
+        deleted: false,
+        edited: 0,
+        size: new Blob([content]).size,
+        hasContent: true
+    });
+
+    await saveMeta();
+}
 // ===== Italic → h2 変換 =====
 editor.addEventListener( 'beforeinput', e => {
 	if ( e.inputType === 'formatItalic' ) {
